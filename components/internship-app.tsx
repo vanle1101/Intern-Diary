@@ -180,10 +180,10 @@ export default function InternshipApp({ view }: { view: View }) {
     }
   };
   return <div className="app-shell"><style jsx global>{`
-    .online-widget{margin-top:auto!important;min-height:48px!important;padding:0 17px!important;border:0!important;border-radius:999px!important;background:linear-gradient(135deg,#087b5d,#0ca574)!important;color:#fff!important;display:flex!important;align-items:center!important;gap:11px!important;box-shadow:0 10px 24px rgba(8,123,93,.24)!important;text-decoration:none!important}
-    .online-widget>span{width:9px!important;height:9px!important;flex:0 0 9px!important;border-radius:50%!important;background:#7effb3!important;box-shadow:0 0 0 4px rgba(126,255,179,.18)!important;animation:presencePulse 1.45s ease-in-out infinite!important}
-    .online-widget b{display:block!important;color:#fff!important;font-size:13px!important;font-weight:850!important;line-height:1.2!important;white-space:nowrap!important}
-    @keyframes presencePulse{0%,100%{opacity:1;transform:scale(1);box-shadow:0 0 0 4px rgba(126,255,179,.18)}50%{opacity:.5;transform:scale(.78);box-shadow:0 0 0 8px rgba(126,255,179,.06)}}
+    .online-widget{margin-top:auto!important;width:fit-content!important;min-height:32px!important;padding:0 10px!important;border:1px solid rgba(8,123,93,.14)!important;border-radius:999px!important;background:rgba(8,123,93,.035)!important;color:#087b5d!important;display:flex!important;align-items:center!important;gap:8px!important;box-shadow:none!important;text-decoration:none!important}
+    .online-widget>span{width:7px!important;height:7px!important;flex:0 0 7px!important;border-radius:50%!important;background:#20b875!important;box-shadow:0 0 0 3px rgba(32,184,117,.13)!important;animation:presencePulse 1.45s ease-in-out infinite!important}
+    .online-widget b{display:block!important;color:#087b5d!important;font-size:11px!important;font-weight:850!important;line-height:1.2!important;white-space:nowrap!important}
+    @keyframes presencePulse{0%,100%{opacity:1;transform:scale(1);box-shadow:0 0 0 3px rgba(32,184,117,.13)}50%{opacity:.45;transform:scale(.78);box-shadow:0 0 0 6px rgba(32,184,117,.05)}}
     .account-cluster{margin-left:auto!important;display:flex!important;align-items:center!important;gap:12px!important}
     .account-cluster .account-name{margin-left:0!important}
     .admin-badge{display:inline-flex!important;align-items:center!important;padding:5px 9px!important;border-radius:999px!important;background:#fff0e4!important;color:#bd581e!important;font-size:10px!important;font-weight:900!important;letter-spacing:.08em!important}

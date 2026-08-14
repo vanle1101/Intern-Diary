@@ -52,9 +52,9 @@ border:2px solid #a8d7d344!important;border-bottom:0!important;clip-path:polygon
 .settings-save-error{margin:14px 0 0!important;padding:11px 13px;border-radius:8px;background:#fff0eb;color:#b4472e!important;font-size:14px!important;font-weight:700}
 @media(max-width:760px){.settings-save-row .primary-btn{width:100%}}
 
-.online-widget{margin-top:auto;display:flex;align-items:center;gap:12px;padding:15px 16px;border:1px solid #dbece7;border-radius:12px;background:linear-gradient(135deg,#eef9f5,#f8fcfa)}
-.online-widget>span{width:11px;height:11px;flex:0 0 auto;border-radius:50%;background:#19a66a;box-shadow:0 0 0 5px #19a66a1c}
-.online-widget b,.online-widget small{display:block}.online-widget b{color:#174738;font-size:13px}.online-widget small{margin-top:4px;color:#6d8179;font-size:10px;line-height:1.35}
+.online-widget{margin-top:auto;width:fit-content;min-height:32px;padding:0 10px;border:1px solid #087b5d24;border-radius:999px;background:#087b5d09;display:flex;align-items:center;gap:8px;box-shadow:none}
+.online-widget>span{width:7px;height:7px;flex:0 0 7px;border-radius:50%;background:#20b875;box-shadow:0 0 0 3px #20b87521}
+.online-widget b{display:block;color:#087b5d;font-size:11px;white-space:nowrap}
 .admin-badge{margin-left:9px;padding:5px 8px;border-radius:999px;background:#fff0e4;color:#c35a1b;font-size:10px;font-weight:900;letter-spacing:.08em}
 .admin-summary{display:grid;grid-template-columns:auto auto auto auto;gap:8px;align-items:baseline;padding:12px 16px;border:1px solid #dce9e5;border-radius:10px;background:#fff}
 .admin-summary b{color:#006f58;font-size:24px}.admin-summary b.online-number{color:#16a269}.admin-summary span{color:#687973;font-size:13px;margin-right:8px}
