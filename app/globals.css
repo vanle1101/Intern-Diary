@@ -46,3 +46,9 @@ border:2px solid #a8d7d344!important;border-bottom:0!important;clip-path:polygon
   .dashboard-schedule .internship-info{grid-column:1!important;min-width:0!important}
   .dashboard-schedule .add-log-btn{grid-column:1!important;justify-self:stretch!important}
 }
+
+.settings-save-row{display:flex;justify-content:flex-end;margin-top:20px;padding-top:18px;border-top:1px solid #e3ece9}
+.settings-save-row .primary-btn{min-width:170px}
+.settings-save-row .primary-btn:disabled{cursor:default;opacity:.55;box-shadow:none}
+.settings-save-error{margin:14px 0 0!important;padding:11px 13px;border-radius:8px;background:#fff0eb;color:#b4472e!important;font-size:14px!important;font-weight:700}
+@media(max-width:760px){.settings-save-row .primary-btn{width:100%}}
