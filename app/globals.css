@@ -31,3 +31,18 @@ linear-gradient(90deg,transparent 0 206px,#9bcfcb66 207px 209px,transparent 210p
 linear-gradient(0deg,transparent 0 136px,#9bcfcb66 137px 139px,transparent 140px) 0 0/100% 100%;
 border:2px solid #a8d7d344!important;border-bottom:0!important;clip-path:polygon(17% 0,88% 0,100% 18%,100% 100%,0 100%,0 22%)!important}.dashboard-welcome h1{font-size:33px!important}.dashboard-welcome p{font-size:16px!important;max-width:640px!important}.dashboard-welcome blockquote{justify-self:center!important;margin:10px 190px 0 0!important;font-size:17px!important;line-height:1.6!important;color:#65727d!important}.dashboard-welcome blockquote small{font-size:14px!important;color:#65727d!important}
 .dashboard-welcome{min-height:150px!important;padding:34px 52px 24px!important;grid-template-columns:minmax(520px,1fr) minmax(520px,.92fr)!important;background:linear-gradient(118deg,#effbf8 0%,#fbfefd 52%,#e7f6f4 100%)!important}.dashboard-welcome:before{right:188px!important;bottom:-116px!important;width:430px!important;height:178px!important;border-radius:50% 50% 0 0!important;background:#b6ded943!important}.dashboard-welcome:after{right:28px!important;top:4px!important;width:410px!important;height:185px!important;background:url("/dashboard-building-line.svg") right top/contain no-repeat!important;border:0!important;clip-path:none!important;opacity:.48!important}.dashboard-welcome h1{font-size:31px!important}.dashboard-welcome p{font-size:16px!important;max-width:640px!important}.dashboard-welcome blockquote{justify-self:start!important;margin:0 160px 0 0!important;padding-top:4px!important;font-size:16px!important;line-height:1.58!important;color:#66757d!important}.dashboard-welcome blockquote small{font-size:13px!important}
+
+/* Hồ sơ thực tập được chỉnh duy nhất trong Cài đặt; Tổng quan chỉ hiển thị. */
+.dashboard-schedule{grid-template-columns:minmax(0,1fr) auto!important;align-items:center!important}
+.internship-info p{margin:7px 0 0;color:#607078;font-size:14px;font-weight:650}
+.internship-info a{display:inline-block;margin-top:7px;color:#007a68;font-size:14px;font-weight:800;text-decoration:none}
+.internship-info a:hover{text-decoration:underline}
+@media(max-width:760px){
+  .dashboard-welcome{grid-template-columns:minmax(0,1fr)!important;min-height:auto!important;margin:0 -14px 20px!important;padding:28px 18px!important}
+  .dashboard-welcome>div,.dashboard-welcome h1,.dashboard-welcome p{min-width:0!important;width:auto!important}
+  .dashboard-welcome blockquote{justify-self:start!important;margin:16px 0 0!important;padding:0!important;font-size:14px!important}
+  .dashboard-welcome:after{right:-42px!important;top:8px!important;width:250px!important;height:142px!important;opacity:.16!important}
+  .dashboard-schedule{grid-template-columns:minmax(0,1fr)!important}
+  .dashboard-schedule .internship-info{grid-column:1!important;min-width:0!important}
+  .dashboard-schedule .add-log-btn{grid-column:1!important;justify-self:stretch!important}
+}
