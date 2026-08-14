@@ -50,10 +50,11 @@ async function translateToEnglish(sourceData: string) {
 
 export default function InternshipApp({ view }: { view: View }) {
   const [state, setState] = useState<AppState | null>(null), [status, setStatus] = useState<SaveStatus>("loading"), [menu, setMenu] = useState(false), [message, setMessage] = useState("");
-  const [authMode, setAuthMode] = useState<AuthMode>("login"), [username, setUsername] = useState(""), [password, setPassword] = useState(""), [user, setUser] = useState<CurrentUser | null>(null);
+  const [authMode, setAuthMode] = useState<AuthMode>("login"), [username, setUsername] = useState(""), [password, setPassword] = useState(""), [user, setUser] = useState<CurrentUser | null>(null), [authWorking, setAuthWorking] = useState(false);
   const skipInitialSave = useRef(true);
-  const openJournal = async (currentUser: CurrentUser) => {
-    setStatus("loading"); setMessage("");
+  const openJournal = async (currentUser: CurrentUser, showLoading = true) => {
+    if (showLoading) setStatus("loading");
+    setMessage("");
     try {
       const cloudState = await requestCloudState();
       skipInitialSave.current = true;
@@ -84,22 +85,25 @@ export default function InternshipApp({ view }: { view: View }) {
   }, [state, user]);
   useEffect(() => { const warn = (e: BeforeUnloadEvent) => { if (status === "saving") e.preventDefault(); }; addEventListener("beforeunload", warn); return () => removeEventListener("beforeunload", warn); }, [status]);
   const submitAuth = async () => {
-    setStatus("loading"); setMessage("");
+    if (authWorking) return;
+    setAuthWorking(true); setMessage("");
     try {
       const response = await fetch(`/api/auth/${authMode}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ username: username.trim(), password }) });
       const data = await response.json() as { user?: CurrentUser; error?: string };
       if (!response.ok || !data.user) throw new Error(data.error || "Không thể xác thực tài khoản.");
       setPassword("");
-      await openJournal(data.user);
+      await openJournal(data.user, false);
     } catch (error) {
       setStatus("locked"); setMessage(error instanceof Error ? error.message : "Không thể xác thực tài khoản.");
+    } finally {
+      setAuthWorking(false);
     }
   };
   const logout = async () => {
     await fetch("/api/auth/logout", { method: "POST" }).catch(() => undefined);
     setState(null); setUser(null); setPassword(""); setMessage(""); setStatus("locked"); setMenu(false);
   };
-  if (status === "locked") return <div className="access-page"><form className="access-card" onSubmit={e => { e.preventDefault(); void submitAuth(); }}><span className="brand-mark">N</span><small>NHẬT KÝ THỰC TẬP UEH</small><div className="auth-tabs"><button type="button" className={authMode === "login" ? "active" : ""} onClick={() => { setAuthMode("login"); setMessage(""); }}>Đăng nhập</button><button type="button" className={authMode === "register" ? "active" : ""} onClick={() => { setAuthMode("register"); setMessage(""); }}>Đăng ký</button></div><h1>{authMode === "login" ? "Chào mừng bạn quay lại" : "Tạo tài khoản mới"}</h1><p>{authMode === "login" ? "Đăng nhập để mở nhật ký đã lưu trên Vercel." : "Mỗi tài khoản có một không gian nhật ký riêng."}</p><label><span>Tên đăng nhập</span><input autoComplete="username" value={username} onChange={e => setUsername(e.target.value)} minLength={3} maxLength={32} pattern="[A-Za-z0-9._-]+" required /></label><label><span>Mật khẩu</span><input type="password" autoComplete={authMode === "login" ? "current-password" : "new-password"} value={password} onChange={e => setPassword(e.target.value)} minLength={6} maxLength={128} required /></label>{message && <div className="access-error">{message}</div>}<button className="primary-btn">{authMode === "login" ? "Đăng nhập" : "Tạo tài khoản"}</button></form></div>;
+  if (status === "locked") return <div className="access-page"><form className="access-card" aria-busy={authWorking} onSubmit={e => { e.preventDefault(); void submitAuth(); }}><span className="brand-mark">N</span><small>NHẬT KÝ THỰC TẬP UEH</small><div className="auth-tabs"><button type="button" disabled={authWorking} className={authMode === "login" ? "active" : ""} onClick={() => { setAuthMode("login"); setMessage(""); }}>Đăng nhập</button><button type="button" disabled={authWorking} className={authMode === "register" ? "active" : ""} onClick={() => { setAuthMode("register"); setMessage(""); }}>Đăng ký</button></div><h1>{authMode === "login" ? "Chào mừng bạn quay lại" : "Tạo tài khoản mới"}</h1><p>{authMode === "login" ? "Đăng nhập để mở nhật ký đã lưu trên Vercel." : "Mỗi tài khoản có một không gian nhật ký riêng."}</p><label><span>Tên đăng nhập</span><input disabled={authWorking} autoComplete="username" value={username} onChange={e => setUsername(e.target.value)} minLength={3} maxLength={32} pattern="[A-Za-z0-9._-]+" required /></label><label><span>Mật khẩu</span><input disabled={authWorking} type="password" autoComplete={authMode === "login" ? "current-password" : "new-password"} value={password} onChange={e => setPassword(e.target.value)} minLength={6} maxLength={128} required /></label>{message && <div className="access-error">{message}</div>}<button className={`primary-btn auth-submit${authWorking ? " busy" : ""}`} disabled={authWorking}>{authWorking ? authMode === "login" ? "Đang đăng nhập…" : "Đang tạo tài khoản…" : authMode === "login" ? "Đăng nhập" : "Tạo tài khoản"}</button></form></div>;
   if (!state) return <div className="loading">Đang tải dữ liệu từ Vercel…</div>;
   const update = (fn: (s: AppState) => AppState) => setState(previous => previous ? fn(previous) : previous);
   return <div className="app-shell"><aside className={menu ? "sidebar open" : "sidebar"}>
