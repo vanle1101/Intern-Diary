@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Be_Vietnam_Pro, Lora } from "next/font/google";
 import "./globals.css";
 import "./font-overrides.css";
+import "./auth-layout.css";
 const sans = Be_Vietnam_Pro({
   variable: "--font-vietnamese-sans",
   subsets: ["latin", "vietnamese"],
