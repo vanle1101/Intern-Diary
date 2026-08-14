@@ -4,7 +4,7 @@ import type { NextRequest, NextResponse } from "next/server";
 import { readCloudState, readEncryptedJson, readLegacyCloudState, writeCloudState, writeEncryptedJson } from "./cloud-storage";
 
 const scrypt = promisify(scryptCallback);
-export const SESSION_COOKIE = "intern_diary_session";
+export const SESSION_COOKIE = "intern_diary_session_v2";
 const SESSION_MAX_AGE = 60 * 60 * 24 * 30;
 const LEGACY_CLAIM_PATH = "intern-diary/auth/legacy-claimed-v1.json";
 
