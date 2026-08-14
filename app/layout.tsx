@@ -14,9 +14,17 @@ const serif = Lora({
   subsets: ["latin", "vietnamese"],
   display: "swap",
 });
-const siteUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL
+const rawSiteUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL
   ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
   : process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+function safeSiteUrl(value: string) {
+  try {
+    return new URL(value).toString();
+  } catch {
+    return "http://localhost:3000";
+  }
+}
+const siteUrl = safeSiteUrl(rawSiteUrl);
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: "Nhật ký thực tập UEH",
