@@ -1,5 +1,5 @@
-import { timingSafeEqual } from "node:crypto";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { getSession } from "../../../lib/auth";
 
 type AiAction = "rewrite" | "weekly_summary" | "activity_draft" | "conclusion_draft" | "review" | "translate_vi_en";
 
@@ -12,16 +12,8 @@ const instructions: Record<AiAction, string> = {
   translate_vi_en: "Dịch nguyên văn nội dung từ tiếng Việt sang tiếng Anh tự nhiên, phù hợp văn phong nhật ký thực tập ngành Kiểm toán.",
 };
 
-function isAuthorized(request: Request) {
-  const expected = process.env.APP_ACCESS_KEY;
-  const supplied = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
-  if (!expected || !supplied) return false;
-  const expectedBuffer = Buffer.from(expected), suppliedBuffer = Buffer.from(supplied);
-  return expectedBuffer.length === suppliedBuffer.length && timingSafeEqual(expectedBuffer, suppliedBuffer);
-}
-
-export async function POST(request: Request) {
-  if (!isAuthorized(request)) return NextResponse.json({ error: "Mã truy cập không đúng." }, { status: 401 });
+export async function POST(request: NextRequest) {
+  if (!getSession(request)) return NextResponse.json({ error: "Phiên đăng nhập đã hết hạn." }, { status: 401 });
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) return NextResponse.json({ error: "Chưa cấu hình GEMINI_API_KEY." }, { status: 503 });
 

@@ -15,20 +15,21 @@ const nav: { view: View; href: string; label: string; icon: string }[] = [
   { view: "compliance", href: "/kiem-tra", label: "Kiểm tra yêu cầu", icon: "☑" }, { view: "settings", href: "/cai-dat", label: "Cài đặt", icon: "⚙" },
 ];
 const uid = () => crypto.randomUUID(), iso = () => new Date().toISOString(), today = () => new Date().toISOString().slice(0, 10);
-const ACCESS_KEY_SESSION = "intern-diary:access-key";
 type SaveStatus = "loading" | "locked" | "saving" | "saved" | "error";
+type AuthMode = "login" | "register";
+type CurrentUser = { id: string; username: string };
 
-async function requestCloudState(accessKey: string) {
-  const response = await fetch("/api/state", { headers: { Authorization: `Bearer ${accessKey}` }, cache: "no-store" });
+async function requestCloudState() {
+  const response = await fetch("/api/state", { cache: "no-store" });
   const data = await response.json() as { state?: AppState; error?: string };
   if (!response.ok || !data.state) throw new Error(data.error || "Không thể mở dữ liệu.");
   return data.state;
 }
 
-async function persistCloudState(accessKey: string, state: AppState) {
+async function persistCloudState(state: AppState) {
   const response = await fetch("/api/state", {
     method: "PUT",
-    headers: { Authorization: `Bearer ${accessKey}`, "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ state }),
   });
   const data = await response.json() as { error?: string };
@@ -37,11 +38,9 @@ async function persistCloudState(accessKey: string, state: AppState) {
 
 async function translateToEnglish(sourceData: string) {
   if (!sourceData.trim()) return sourceData;
-  const key = sessionStorage.getItem(ACCESS_KEY_SESSION);
-  if (!key) throw new Error("Phiên truy cập đã hết hạn.");
   const response = await fetch("/api/ai", {
     method: "POST",
-    headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ action: "translate_vi_en", sourceData }),
   });
   const data = await response.json() as { text?: string; error?: string };
@@ -50,15 +49,15 @@ async function translateToEnglish(sourceData: string) {
 }
 
 export default function InternshipApp({ view }: { view: View }) {
-  const [state, setState] = useState<AppState | null>(null), [status, setStatus] = useState<SaveStatus>("loading"), [menu, setMenu] = useState(false), [accessInput, setAccessInput] = useState(""), [message, setMessage] = useState("");
-  const accessKey = useRef(""), skipInitialSave = useRef(true);
-  const unlock = async (key: string) => {
+  const [state, setState] = useState<AppState | null>(null), [status, setStatus] = useState<SaveStatus>("loading"), [menu, setMenu] = useState(false), [message, setMessage] = useState("");
+  const [authMode, setAuthMode] = useState<AuthMode>("login"), [username, setUsername] = useState(""), [password, setPassword] = useState(""), [user, setUser] = useState<CurrentUser | null>(null);
+  const skipInitialSave = useRef(true);
+  const openJournal = async (currentUser: CurrentUser) => {
     setStatus("loading"); setMessage("");
     try {
-      const cloudState = await requestCloudState(key);
-      accessKey.current = key;
-      sessionStorage.setItem(ACCESS_KEY_SESSION, key);
+      const cloudState = await requestCloudState();
       skipInitialSave.current = true;
+      setUser(currentUser);
       setState(cloudState);
       setStatus("saved");
     } catch (error) {
@@ -66,21 +65,41 @@ export default function InternshipApp({ view }: { view: View }) {
     }
   };
   useEffect(() => {
-    const key = sessionStorage.getItem(ACCESS_KEY_SESSION);
-    if (!key) { queueMicrotask(() => setStatus("locked")); return; }
-    queueMicrotask(() => { void unlock(key); });
+    queueMicrotask(() => {
+      void fetch("/api/auth/me", { cache: "no-store" }).then(async response => {
+        const data = await response.json() as { user?: CurrentUser };
+        if (!response.ok || !data.user) { setStatus("locked"); return; }
+        await openJournal(data.user);
+      }).catch(() => setStatus("locked"));
+    });
   }, []);
   useEffect(() => {
-    if (!state || !accessKey.current) return;
+    if (!state || !user) return;
     if (skipInitialSave.current) { skipInitialSave.current = false; return; }
     const timer = setTimeout(() => {
       setStatus("saving");
-      void persistCloudState(accessKey.current, state).then(() => setStatus("saved")).catch(error => { setStatus("error"); setMessage(error instanceof Error ? error.message : "Không thể lưu dữ liệu."); });
+      void persistCloudState(state).then(() => setStatus("saved")).catch(error => { setStatus("error"); setMessage(error instanceof Error ? error.message : "Không thể lưu dữ liệu."); });
     }, 700);
     return () => clearTimeout(timer);
-  }, [state]);
+  }, [state, user]);
   useEffect(() => { const warn = (e: BeforeUnloadEvent) => { if (status === "saving") e.preventDefault(); }; addEventListener("beforeunload", warn); return () => removeEventListener("beforeunload", warn); }, [status]);
-  if (status === "locked") return <div className="access-page"><form className="access-card" onSubmit={e => { e.preventDefault(); if (accessInput.trim()) void unlock(accessInput.trim()); }}><span className="brand-mark">N</span><small>NHẬT KÝ THỰC TẬP UEH</small><h1>Mở dữ liệu trên Vercel</h1><p>Nhập mã truy cập cá nhân để tiếp tục.</p><label><span>Mã truy cập</span><input type="password" autoComplete="current-password" value={accessInput} onChange={e => setAccessInput(e.target.value)} required /></label>{message && <div className="access-error">{message}</div>}<button className="primary-btn">Mở nhật ký</button></form></div>;
+  const submitAuth = async () => {
+    setStatus("loading"); setMessage("");
+    try {
+      const response = await fetch(`/api/auth/${authMode}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ username: username.trim(), password }) });
+      const data = await response.json() as { user?: CurrentUser; error?: string };
+      if (!response.ok || !data.user) throw new Error(data.error || "Không thể xác thực tài khoản.");
+      setPassword("");
+      await openJournal(data.user);
+    } catch (error) {
+      setStatus("locked"); setMessage(error instanceof Error ? error.message : "Không thể xác thực tài khoản.");
+    }
+  };
+  const logout = async () => {
+    await fetch("/api/auth/logout", { method: "POST" }).catch(() => undefined);
+    setState(null); setUser(null); setPassword(""); setMessage(""); setStatus("locked"); setMenu(false);
+  };
+  if (status === "locked") return <div className="access-page"><form className="access-card" onSubmit={e => { e.preventDefault(); void submitAuth(); }}><span className="brand-mark">N</span><small>NHẬT KÝ THỰC TẬP UEH</small><div className="auth-tabs"><button type="button" className={authMode === "login" ? "active" : ""} onClick={() => { setAuthMode("login"); setMessage(""); }}>Đăng nhập</button><button type="button" className={authMode === "register" ? "active" : ""} onClick={() => { setAuthMode("register"); setMessage(""); }}>Đăng ký</button></div><h1>{authMode === "login" ? "Chào mừng bạn quay lại" : "Tạo tài khoản mới"}</h1><p>{authMode === "login" ? "Đăng nhập để mở nhật ký đã lưu trên Vercel." : "Mỗi tài khoản có một không gian nhật ký riêng."}</p><label><span>Tên đăng nhập</span><input autoComplete="username" value={username} onChange={e => setUsername(e.target.value)} minLength={3} maxLength={32} pattern="[A-Za-z0-9._-]+" required /></label><label><span>Mật khẩu</span><input type="password" autoComplete={authMode === "login" ? "current-password" : "new-password"} value={password} onChange={e => setPassword(e.target.value)} minLength={6} maxLength={128} required /></label>{message && <div className="access-error">{message}</div>}<button className="primary-btn">{authMode === "login" ? "Đăng nhập" : "Tạo tài khoản"}</button></form></div>;
   if (!state) return <div className="loading">Đang tải dữ liệu từ Vercel…</div>;
   const update = (fn: (s: AppState) => AppState) => setState(previous => previous ? fn(previous) : previous);
   return <div className="app-shell"><aside className={menu ? "sidebar open" : "sidebar"}>
@@ -88,7 +107,7 @@ export default function InternshipApp({ view }: { view: View }) {
     <nav>{nav.map(item => <Link key={item.view} href={item.href} className={view === item.view ? "active" : ""}><span>{item.icon}</span>{item.label}{item.view === "compliance" && <em>{getComplianceItems(state).filter(item => item.status === "Đạt").length}</em>}</Link>)}</nav>
     <div className="sidebar-foot"><span>●</span><div><b>Đám mây riêng tư</b><small>Tự động lưu trên Vercel</small></div></div>
   </aside>{menu && <button className="scrim" onClick={() => setMenu(false)} aria-label="Đóng menu" />}
-  <main><header className="topbar"><button className="menu-btn" onClick={() => setMenu(true)} aria-label="Mở trình đơn">☰</button><div className="crumb">Không gian làm việc <span>/</span> {nav.find(n => n.view === view)?.label}</div><div className={status === "saved" ? "save saved" : status === "error" ? "save error" : "save"}><i />{status === "saved" ? "Đã lưu trên Vercel" : status === "error" ? "Lỗi lưu dữ liệu" : "Đang lưu…"}</div><button className="avatar" aria-label="Tài khoản sinh viên">SV</button></header>
+  <main><header className="topbar"><button className="menu-btn" onClick={() => setMenu(true)} aria-label="Mở trình đơn">☰</button><div className="crumb">Không gian làm việc <span>/</span> {nav.find(n => n.view === view)?.label}</div><div className={status === "saved" ? "save saved" : status === "error" ? "save error" : "save"}><i />{status === "saved" ? "Đã lưu trên Vercel" : status === "error" ? "Lỗi lưu dữ liệu" : "Đang lưu…"}</div><span className="account-name">{user?.username}</span><button className="logout-btn" onClick={() => void logout()}>Đăng xuất</button></header>
   <div className="page">{view === "dashboard" && <Dashboard state={state} />}{view === "logs" && <Logs state={state} update={update} />}{view === "plan" && <Plan state={state} update={update} />}{view === "activities" && <Activities state={state} update={update} />}{view === "conclusion" && <ConclusionView state={state} update={update} />}{view === "compliance" && <Compliance state={state} />}{view === "settings" && <Settings state={state} setState={setState} />}{["references", "appendices", "preview"].includes(view) && <Soon view={view} />}</div></main></div>;
 }
 
