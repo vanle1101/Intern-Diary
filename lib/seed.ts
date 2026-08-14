@@ -1,0 +1,16 @@
+import type { AppState, DailyLog, InternshipPlan } from "./models";
+const id = () => crypto.randomUUID();
+const now = () => new Date().toISOString();
+const topics = [
+  ["Làm quen quy trình kiểm toán và hồ sơ", "Hiểu cách tổ chức hồ sơ kiểm toán"],
+  ["Lấy mẫu chứng từ tài khoản 152", "Áp dụng nguyên tắc chọn mẫu"],
+  ["Kiểm tra khoản mục tài sản cố định TK 211", "Nắm thủ tục kiểm tra nguyên giá và khấu hao"],
+  ["Kiểm tra bảng phân bổ chi phí trả trước TK 242", "Đối chiếu và đánh giá thời gian phân bổ"],
+];
+export function createInitialState(withDemo = true): AppState {
+  const internshipId = id(), profileId = id();
+  const plans: InternshipPlan[] = Array.from({ length: 12 }, (_, index) => ({ id: id(), internshipId, week: index + 1, workContent: topics[index]?.[0] ?? "", target: topics[index]?.[1] ?? "", method: index < 4 ? "Quan sát, thực hành dưới sự hướng dẫn và tự nghiên cứu" : "", supportRequired: index < 4 ? "Hướng dẫn của kiểm toán viên phụ trách" : "", expectedResult: index < 4 ? "Hoàn thành và lưu giấy làm việc đúng quy trình" : "" }));
+  const logs: DailyLog[] = withDemo ? topics.map((topic, index) => ({ id: id(), internshipId, date: `2026-01-${String(5 + index * 7).padStart(2, "0")}`, week: index + 1, title: topic[0], assignedWork: topic[0], actionsTaken: index === 0 ? "Đọc hướng dẫn, quan sát cấu trúc hồ sơ và cách đánh tham chiếu." : "Đối chiếu dữ liệu được giao với chứng từ và ghi nhận kết quả trên giấy làm việc.", relatedDocuments: "Hồ sơ và chứng từ đã được ẩn thông tin nhận diện", tools: "Microsoft Excel", appliedKnowledge: "Kiến thức kiểm toán, kỹ năng đối chiếu và lập hồ sơ", result: "Hoàn thành phần việc được giao và gửi người hướng dẫn soát xét.", difficulties: "Chưa quen cách trình bày giấy làm việc.", resolution: "Tham khảo mẫu và trao đổi với người hướng dẫn.", lessonsLearned: "Cần lưu vết đầy đủ cho từng kết luận kiểm toán.", additionalNotes: "Dữ liệu demo — có thể xoá trong Cài đặt.", workType: index === 0 ? "Tìm hiểu quy trình" : "Thủ tục kiểm toán", tags: index === 1 ? ["TK 152", "Lấy mẫu kiểm toán", "Excel"] : index === 2 ? ["TK 211", "Working paper"] : index === 3 ? ["TK 242", "Phân bổ chi phí"] : ["Audit procedure"], files: [], sensitive: false, createdAt: now(), updatedAt: now() })) : [];
+  return { version: 1, profile: { id: profileId, fullName: "Sinh viên UEH", studentId: "", university: "Đại học Kinh tế TP.HCM", faculty: "Khoa Kế toán", major: "Kiểm toán", className: "" }, internship: { id: internshipId, profileId, organization: "Đơn vị thực tập", position: "Thực tập sinh kiểm toán", supervisor: "", startDate: "2026-01-05", endDate: "2026-03-27", totalWeeks: 12, type: "graduation_internship" }, plans, dailyLogs: logs, activities: [], weeklySummaries: [], conclusion: { id: id(), internshipId, rows: plans.map(p => ({ week: p.week, plannedTarget: p.target, actualTarget: "", plannedWork: p.workContent, actualWork: "", limitations: "", correctiveSolution: "", solutionExecution: "" })), completedWork: "", professionalKnowledge: "", developedSkills: "", lessons: "", personalLimitations: "", personalChanges: "", internshipValue: "", finalConclusion: "", updatedAt: now() }, references: [], appendices: [], settings: { theme: "light", autosave: true, aiConsentRequired: true, defaultAnonymization: true } };
+}
+
