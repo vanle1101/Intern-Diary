@@ -11,6 +11,7 @@ const LEGACY_CLAIM_PATH = "intern-diary/auth/legacy-claimed-v1.json";
 export interface PublicUser {
   id: string;
   username: string;
+  fullName: string;
 }
 
 interface StoredUser extends PublicUser {
@@ -49,6 +50,13 @@ export function validateCredentials(username: unknown, password: unknown) {
   return null;
 }
 
+export function validateFullName(fullName: unknown) {
+  if (typeof fullName !== "string" || fullName.trim().length < 2 || fullName.trim().length > 80) {
+    return "Họ và tên phải có từ 2 đến 80 ký tự.";
+  }
+  return null;
+}
+
 async function hashPassword(password: string, salt: string) {
   const derivedKey = await scrypt(password, salt, 64) as Buffer;
   return derivedKey.toString("hex");
@@ -58,27 +66,29 @@ async function findUser(username: string) {
   return readEncryptedJson<StoredUser>(userPath(username));
 }
 
-async function provisionState(userId: string) {
+async function provisionState(userId: string, fullName: string) {
   const legacy = await readLegacyCloudState();
   if (legacy) {
     try {
       await writeEncryptedJson(LEGACY_CLAIM_PATH, { userId, claimedAt: new Date().toISOString() }, false);
-      await writeCloudState(userId, legacy);
+      await writeCloudState(userId, { ...legacy, profile: { ...legacy.profile, fullName } });
       return;
     } catch {
       // Tài khoản đầu tiên đã nhận dữ liệu cũ; tài khoản này bắt đầu với dữ liệu mẫu riêng.
     }
   }
-  await readCloudState(userId);
+  const state = await readCloudState(userId);
+  await writeCloudState(userId, { ...state, profile: { ...state.profile, fullName } });
 }
 
-export async function registerUser(username: string, password: string): Promise<PublicUser> {
+export async function registerUser(username: string, password: string, fullName: string): Promise<PublicUser> {
   const cleanUsername = username.trim();
   if (await findUser(cleanUsername)) throw new Error("Tên đăng nhập này đã tồn tại.");
   const salt = randomBytes(16).toString("hex");
   const user: StoredUser = {
     id: randomUUID(),
     username: cleanUsername,
+    fullName: fullName.trim(),
     normalizedUsername: normalizeUsername(cleanUsername),
     passwordSalt: salt,
     passwordHash: await hashPassword(password, salt),
@@ -89,8 +99,8 @@ export async function registerUser(username: string, password: string): Promise<
   } catch {
     throw new Error("Tên đăng nhập này đã tồn tại.");
   }
-  await provisionState(user.id);
-  return { id: user.id, username: user.username };
+  await provisionState(user.id, user.fullName);
+  return { id: user.id, username: user.username, fullName: user.fullName };
 }
 
 export async function authenticateUser(username: string, password: string): Promise<PublicUser | null> {
@@ -99,7 +109,7 @@ export async function authenticateUser(username: string, password: string): Prom
   const supplied = Buffer.from(await hashPassword(password, user.passwordSalt), "hex");
   const expected = Buffer.from(user.passwordHash, "hex");
   if (supplied.length !== expected.length || !timingSafeEqual(supplied, expected)) return null;
-  return { id: user.id, username: user.username };
+  return { id: user.id, username: user.username, fullName: user.fullName };
 }
 
 export function createSessionToken(user: PublicUser) {
@@ -132,8 +142,8 @@ export function getSession(request: NextRequest): PublicUser | null {
   if (expected.length !== supplied.length || !timingSafeEqual(expected, supplied)) return null;
   try {
     const value = JSON.parse(Buffer.from(payload, "base64url").toString("utf8")) as SessionPayload;
-    if (!value.id || !value.username || value.exp <= Math.floor(Date.now() / 1000)) return null;
-    return { id: value.id, username: value.username };
+    if (!value.id || !value.username || !value.fullName || value.exp <= Math.floor(Date.now() / 1000)) return null;
+    return { id: value.id, username: value.username, fullName: value.fullName };
   } catch {
     return null;
   }

@@ -17,7 +17,7 @@ const nav: { view: View; href: string; label: string; icon: string }[] = [
 const uid = () => crypto.randomUUID(), iso = () => new Date().toISOString(), today = () => new Date().toISOString().slice(0, 10);
 type SaveStatus = "loading" | "locked" | "saving" | "saved" | "error";
 type AuthMode = "login" | "register";
-type CurrentUser = { id: string; username: string };
+type CurrentUser = { id: string; username: string; fullName: string };
 
 async function requestCloudState() {
   const response = await fetch("/api/state", { cache: "no-store" });
@@ -50,7 +50,7 @@ async function translateToEnglish(sourceData: string) {
 
 export default function InternshipApp({ view }: { view: View }) {
   const [state, setState] = useState<AppState | null>(null), [status, setStatus] = useState<SaveStatus>("loading"), [menu, setMenu] = useState(false), [message, setMessage] = useState("");
-  const [authMode, setAuthMode] = useState<AuthMode>("login"), [username, setUsername] = useState(""), [password, setPassword] = useState(""), [user, setUser] = useState<CurrentUser | null>(null), [authWorking, setAuthWorking] = useState(false);
+  const [authMode, setAuthMode] = useState<AuthMode>("login"), [fullName, setFullName] = useState(""), [username, setUsername] = useState(""), [password, setPassword] = useState(""), [user, setUser] = useState<CurrentUser | null>(null), [authWorking, setAuthWorking] = useState(false);
   const skipInitialSave = useRef(true);
   const openJournal = async (currentUser: CurrentUser, showLoading = true) => {
     if (showLoading) setStatus("loading");
@@ -88,7 +88,7 @@ export default function InternshipApp({ view }: { view: View }) {
     if (authWorking) return;
     setAuthWorking(true); setMessage("");
     try {
-      const response = await fetch(`/api/auth/${authMode}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ username: username.trim(), password }) });
+      const response = await fetch(`/api/auth/${authMode}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ fullName: fullName.trim(), username: username.trim(), password }) });
       const data = await response.json() as { user?: CurrentUser; error?: string };
       if (!response.ok || !data.user) throw new Error(data.error || "Không thể xác thực tài khoản.");
       setPassword("");
@@ -103,7 +103,7 @@ export default function InternshipApp({ view }: { view: View }) {
     await fetch("/api/auth/logout", { method: "POST" }).catch(() => undefined);
     setState(null); setUser(null); setPassword(""); setMessage(""); setStatus("locked"); setMenu(false);
   };
-  if (status === "locked") return <div className="access-page"><form className="access-card" aria-busy={authWorking} onSubmit={e => { e.preventDefault(); void submitAuth(); }}><span className="brand-mark">N</span><small>NHẬT KÝ THỰC TẬP UEH</small><div className="auth-tabs"><button type="button" disabled={authWorking} className={authMode === "login" ? "active" : ""} onClick={() => { setAuthMode("login"); setMessage(""); }}>Đăng nhập</button><button type="button" disabled={authWorking} className={authMode === "register" ? "active" : ""} onClick={() => { setAuthMode("register"); setMessage(""); }}>Đăng ký</button></div><h1>{authMode === "login" ? "Chào mừng bạn quay lại" : "Tạo tài khoản mới"}</h1><p>{authMode === "login" ? "Đăng nhập để mở nhật ký đã lưu trên Vercel." : "Mỗi tài khoản có một không gian nhật ký riêng."}</p><label><span>Tên đăng nhập</span><input disabled={authWorking} autoComplete="username" value={username} onChange={e => setUsername(e.target.value)} minLength={3} maxLength={32} pattern="[A-Za-z0-9._-]+" required /></label><label><span>Mật khẩu</span><input disabled={authWorking} type="password" autoComplete={authMode === "login" ? "current-password" : "new-password"} value={password} onChange={e => setPassword(e.target.value)} minLength={6} maxLength={128} required /></label>{message && <div className="access-error">{message}</div>}<button className={`primary-btn auth-submit${authWorking ? " busy" : ""}`} disabled={authWorking}>{authWorking ? authMode === "login" ? "Đang đăng nhập…" : "Đang tạo tài khoản…" : authMode === "login" ? "Đăng nhập" : "Tạo tài khoản"}</button></form></div>;
+  if (status === "locked") return <div className="access-page"><form className="access-card" aria-busy={authWorking} onSubmit={e => { e.preventDefault(); void submitAuth(); }}><span className="brand-mark">N</span><small>NHẬT KÝ THỰC TẬP UEH</small><div className="auth-tabs"><button type="button" disabled={authWorking} className={authMode === "login" ? "active" : ""} onClick={() => { setAuthMode("login"); setMessage(""); }}>Đăng nhập</button><button type="button" disabled={authWorking} className={authMode === "register" ? "active" : ""} onClick={() => { setAuthMode("register"); setMessage(""); }}>Đăng ký</button></div><h1>{authMode === "login" ? "Chào mừng bạn quay lại" : "Tạo tài khoản mới"}</h1><p>{authMode === "login" ? "Đăng nhập để mở nhật ký đã lưu trên Vercel." : "Mỗi tài khoản có một không gian nhật ký riêng."}</p>{authMode === "register" && <label><span>Họ và tên</span><input disabled={authWorking} autoComplete="name" value={fullName} onChange={e => setFullName(e.target.value)} minLength={2} maxLength={80} required /></label>}<label><span>Tên đăng nhập</span><input disabled={authWorking} autoComplete="username" value={username} onChange={e => setUsername(e.target.value)} minLength={3} maxLength={32} pattern="[A-Za-z0-9._-]+" required /></label><label><span>Mật khẩu</span><input disabled={authWorking} type="password" autoComplete={authMode === "login" ? "current-password" : "new-password"} value={password} onChange={e => setPassword(e.target.value)} minLength={6} maxLength={128} required /></label>{message && <div className="access-error">{message}</div>}<button className={`primary-btn auth-submit${authWorking ? " busy" : ""}`} disabled={authWorking}>{authWorking ? authMode === "login" ? "Đang đăng nhập…" : "Đang tạo tài khoản…" : authMode === "login" ? "Đăng nhập" : "Tạo tài khoản"}</button></form></div>;
   if (!state) return <div className="loading">Đang tải dữ liệu từ Vercel…</div>;
   const update = (fn: (s: AppState) => AppState) => setState(previous => previous ? fn(previous) : previous);
   return <div className="app-shell"><aside className={menu ? "sidebar open" : "sidebar"}>
