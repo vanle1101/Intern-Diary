@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import type { Activity, AppState, Conclusion, DailyLog, InternshipPlan } from "../lib/models";
 import { getComplianceItems, getProgress } from "../lib/progress";
 import { resetState } from "../lib/storage";
@@ -191,8 +192,9 @@ function findAgentRoute(text: string) {
   return exact ?? (/nh[aậ]p|ghi|vi[eế]t|th[eê]m/.test(normalized) ? agentRoutes[0] : undefined);
 }
 function AssistantAgent({ state, view, navigate }: { state: AppState; view: View; navigate: (href: string) => void }) {
-  const [open, setOpen] = useState(false), [input, setInput] = useState(""), [working, setWorking] = useState(false);
+  const [open, setOpen] = useState(false), [input, setInput] = useState(""), [working, setWorking] = useState(false), [mounted, setMounted] = useState(false);
   const [messages, setMessages] = useState<AgentMessage[]>([{ role: "agent", text: "Bạn cần nhập nhật ký, lập kế hoạch hay kiểm tra thiếu gì cứ nói mình mở đúng chỗ cho." }]);
+  useEffect(() => setMounted(true), []);
   const summary = () => ({ currentTab: nav.find(item => item.view === view)?.label, internship: state.internship, counts: { dailyLogs: state.dailyLogs.length, activities: state.activities.length, plansDone: state.plans.filter(plan => plan.workContent.trim()).length, conclusionDone: Object.values(state.conclusion).filter(value => typeof value === "string" && value.trim()).length } });
   const send = async (preset?: string) => {
     const text = (preset ?? input).trim();
@@ -216,7 +218,8 @@ function AssistantAgent({ state, view, navigate }: { state: AppState; view: View
       setWorking(false); setOpen(true);
     }
   };
-  return <div className={open ? "agent-widget open" : "agent-widget"}><button className="agent-fab" onClick={() => setOpen(value => !value)} aria-label="Mở trợ lý AI"><span>AI</span></button>{open && <section className="agent-panel" aria-label="Trợ lý AI"><header><div><small>TRỢ LÝ AGENT</small><b>Muốn làm gì, nói mình mở đúng tab</b></div><button onClick={() => setOpen(false)} aria-label="Đóng">×</button></header><div className="agent-messages">{messages.map((message, index) => <p key={index} className={message.role}>{message.text}</p>)}{working && <p className="agent">Đang nghĩ chút…</p>}</div><div className="agent-suggest"><button onClick={() => void send("Tôi muốn nhập nhật ký")}>Nhập nhật ký</button><button onClick={() => void send("Kiểm tra tôi còn thiếu gì")}>Kiểm tra thiếu gì</button><button onClick={() => void send("Setup ngày bắt đầu")}>Setup lịch</button></div><form onSubmit={event => { event.preventDefault(); void send(); }}><input value={input} onChange={event => setInput(event.target.value)} placeholder="Ví dụ: t muốn nhập nhật ký hôm nay" /><button disabled={working}>Gửi</button></form></section>}</div>;
+  const widget = <div className={open ? "agent-widget open" : "agent-widget"}><button className="agent-fab" onClick={() => setOpen(value => !value)} aria-label="Mở trợ lý AI"><span>AI</span><em>Trợ lý</em></button>{open && <section className="agent-panel" aria-label="Trợ lý AI"><header><div><small>TRỢ LÝ AGENT</small><b>Muốn làm gì, nói mình mở đúng tab</b></div><button onClick={() => setOpen(false)} aria-label="Đóng">×</button></header><div className="agent-messages">{messages.map((message, index) => <p key={index} className={message.role}>{message.text}</p>)}{working && <p className="agent">Đang nghĩ chút…</p>}</div><div className="agent-suggest"><button onClick={() => void send("Tôi muốn nhập nhật ký")}>Nhập nhật ký</button><button onClick={() => void send("Kiểm tra tôi còn thiếu gì")}>Kiểm tra thiếu gì</button><button onClick={() => void send("Setup ngày bắt đầu")}>Setup lịch</button></div><form onSubmit={event => { event.preventDefault(); void send(); }}><input value={input} onChange={event => setInput(event.target.value)} placeholder="Ví dụ: t muốn nhập nhật ký hôm nay" /><button disabled={working}>Gửi</button></form></section>}</div>;
+  return mounted ? createPortal(widget, document.body) : null;
 }
 
 function Logs({ state, update }: { state: AppState; update: (fn: (s: AppState) => AppState) => void }) {
