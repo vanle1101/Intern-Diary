@@ -252,7 +252,7 @@
 .auth-row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   gap: 18px;
   margin: 22px 0 0;
 }
@@ -270,15 +270,6 @@
   width: 18px;
   height: 18px;
   accent-color: #00756f;
-}
-.auth-link,
-.auth-switch button {
-  border: 0;
-  background: transparent;
-  color: #006d70;
-  font: inherit;
-  font-weight: 800;
-  cursor: pointer;
 }
 .access-error {
   width: 100%;
@@ -323,21 +314,29 @@
   cursor: pointer;
 }
 .auth-alt:hover { border-color: #00756f; color: #006d70; }
-.auth-switch {
-  margin-top: 25px !important;
-  color: #5d656c !important;
-  font-size: 14px !important;
-}
 .access-card footer {
   display: flex;
+  align-items: center;
   justify-content: center;
-  gap: 28px;
+  gap: 12px;
   margin-top: auto;
   padding-top: 34px;
-  color: #6f777e;
+  color: #667179;
+  font-size: 12px;
+  line-height: 1.4;
+}
+.access-card footer strong {
+  color: #006d70;
   font-size: 12px;
 }
-.access-card footer span { white-space: nowrap; }
+.access-card footer span {
+  white-space: nowrap;
+}
+.access-card footer span::before {
+  content: "•";
+  margin-right: 12px;
+  color: #c5cdd2;
+}
 
 @media (max-width: 1180px) {
   .access-page { grid-template-columns: minmax(470px, 1fr) minmax(430px, .95fr); }
@@ -382,8 +381,9 @@
   .access-card footer {
     flex-wrap: wrap;
     justify-content: flex-start;
-    gap: 10px 18px;
+    gap: 8px 14px;
   }
+  .access-card footer span::before { margin-right: 10px; }
 }
 
 @media (max-width: 560px) {
@@ -397,11 +397,8 @@
   .access-highlights { margin-top: 24px; }
   .access-page .access-card { padding: 30px 16px 18px; }
   .form-logo { margin-bottom: 22px; }
-  .auth-row {
-    align-items: flex-start;
-    flex-direction: column;
-    gap: 12px;
-  }
+  .auth-row { gap: 12px; }
   .auth-divider { gap: 12px; }
   .access-card footer { font-size: 11px; }
+  .access-card footer span { white-space: normal; }
 }
