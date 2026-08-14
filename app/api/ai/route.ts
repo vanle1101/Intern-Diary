@@ -4,8 +4,8 @@ type AiAction = "rewrite" | "weekly_summary" | "activity_draft" | "conclusion_dr
 
 const instructions: Record<AiAction, string> = {
   rewrite: "Viết lại ghi chú thành văn phong phù hợp với Nhật ký thực tập đại học.",
-  weekly_summary: "Tổng hợp các Daily Log thành bản tổng kết tuần có cấu trúc rõ ràng.",
-  activity_draft: "Tổng hợp các Daily Log liên quan thành bản nháp mô tả một hoạt động chính.",
+  weekly_summary: "Tổng hợp các bản ghi nhật ký thành bản tổng kết tuần có cấu trúc rõ ràng.",
+  activity_draft: "Tổng hợp các bản ghi nhật ký liên quan thành bản nháp mô tả một hoạt động chính.",
   conclusion_draft: "Tổng hợp dữ liệu đã cung cấp thành bản nháp kết luận thực tập.",
   review: "Rà soát và chỉ ra nội dung sơ sài, thiếu kết quả, bài học, quy trình hoặc không nhất quán.",
 };
