@@ -15,11 +15,7 @@
   min-height: 100vh;
   position: relative;
   overflow: hidden;
-  background-color: #eaf7fc;
-  background-image: url("/auth-ueh-left-fixed.png");
-  background-position: center center;
-  background-size: 100% 100%;
-  background-repeat: no-repeat;
+  background: #eef9ff;
 }
 
 .locked-art {
@@ -32,15 +28,163 @@
   -webkit-user-drag: none;
 }
 
-.locked-art-image {
+.auth-art-bg {
   position: absolute;
   inset: 0;
-  z-index: 0;
+  pointer-events: none;
+}
+
+.auth-art-bg::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: url("/ueh-campus-hero.png") 60% 50% / auto 100% no-repeat;
+}
+
+.auth-art-bg::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg, #eef9ffe8 0%, #ffffffe0 38%, #ffffff52 62%, #0b898486 84%, #006b68e8 100%),
+    linear-gradient(90deg, #fffffff5 0%, #ffffffd8 34%, #ffffff5c 58%, #ffffff10 100%);
+}
+
+.auth-art-dots {
+  position: absolute;
+  right: 6%;
+  top: 5.2%;
+  width: 180px;
+  height: 220px;
+  background-image: radial-gradient(#fff 1.5px, transparent 1.5px);
+  background-size: 14px 14px;
+  opacity: .86;
+  pointer-events: none;
+}
+
+.auth-art-dots::after {
+  content: "";
+  position: absolute;
+  left: -82vw;
+  bottom: -66vh;
+  width: 126px;
+  height: 180px;
+  background-image: radial-gradient(#fff 1.4px, transparent 1.4px);
+  background-size: 13px 13px;
+  opacity: .92;
+}
+
+.auth-art-content {
+  position: relative;
+  z-index: 1;
+  width: min(780px, 78%);
+  padding: clamp(28px, 3.8vw, 48px) 0 0 clamp(38px, 4.7vw, 70px);
+  color: #073f49;
+  pointer-events: none;
+}
+
+.auth-art-logo {
+  width: clamp(190px, 17vw, 260px);
+  height: auto;
   display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: fill;
-  object-position: center center;
+  margin-bottom: clamp(22px, 2vw, 30px);
+}
+
+.auth-art-content h2 {
+  margin: 0;
+  font-family: var(--font-vietnamese-sans), "Arial", sans-serif;
+  font-size: clamp(50px, 5vw, 78px);
+  font-weight: 1000;
+  line-height: .98;
+  letter-spacing: -.055em;
+}
+
+.auth-art-content h2 span,
+.auth-art-content h2 b {
+  display: block;
+}
+
+.auth-art-content h2 span {
+  color: #006f75;
+}
+
+.auth-art-content h2 b {
+  margin-top: .12em;
+  color: #f05223;
+  white-space: nowrap;
+}
+
+.auth-art-rule {
+  display: block;
+  width: 72px;
+  height: 4px;
+  margin: clamp(16px, 1.45vw, 22px) 0 clamp(14px, 1.45vw, 22px);
+  border-radius: 999px;
+  background: #f05223;
+}
+
+.auth-art-content p {
+  max-width: 590px;
+  margin: 0;
+  color: #27364a;
+  font-size: clamp(16px, 1.22vw, 21px);
+  font-weight: 450;
+  line-height: 1.42;
+  letter-spacing: -.015em;
+}
+
+.auth-art-features {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(130px, 1fr));
+  gap: clamp(14px, 1.45vw, 24px);
+  width: min(610px, 84%);
+  margin-top: clamp(18px, 1.7vw, 26px);
+}
+
+.auth-art-features article {
+  min-height: clamp(108px, 8.8vw, 132px);
+  padding: clamp(14px, 1.2vw, 19px) clamp(11px, 1vw, 16px);
+  border-radius: 14px;
+  background: #fffffff0;
+  box-shadow: 0 13px 34px #193d4c16;
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  text-align: center;
+}
+
+.auth-art-features span {
+  color: #00767b;
+  font-size: clamp(22px, 1.8vw, 30px);
+  line-height: 1;
+  margin-bottom: 16px;
+}
+
+.auth-art-features b {
+  color: #172432;
+  font-size: clamp(12px, 1vw, 15px);
+  font-weight: 900;
+}
+
+.auth-art-features small {
+  display: block;
+  max-width: 135px;
+  margin-top: 9px;
+  color: #4f5f66;
+  font-size: clamp(11px, .95vw, 14px);
+  line-height: 1.45;
+}
+
+.auth-art-quote {
+  position: absolute;
+  z-index: 1;
+  left: clamp(38px, 4.7vw, 70px);
+  bottom: clamp(40px, 4.2vw, 66px);
+  color: #fff;
+  font-size: clamp(17px, 1.35vw, 23px);
+  font-weight: 900;
+  line-height: 1.25;
+  text-shadow: 0 3px 16px #004c4a80;
   pointer-events: none;
 }
 
