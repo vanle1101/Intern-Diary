@@ -7,13 +7,12 @@ import type { Activity, AppState, Conclusion, DailyLog, InternshipPlan } from ".
 import { getComplianceItems, getProgress } from "../lib/progress";
 import { resetState } from "../lib/storage";
 
-export type View = "dashboard" | "logs" | "plan" | "activities" | "conclusion" | "references" | "appendices" | "preview" | "compliance" | "settings";
+export type View = "dashboard" | "logs" | "plan" | "activities" | "conclusion" | "compliance" | "settings";
 const nav: { view: View; href: string; label: string; icon: string }[] = [
   { view: "dashboard", href: "/", label: "Tổng quan", icon: "⌂" }, { view: "logs", href: "/nhat-ky", label: "Nhật ký hằng ngày", icon: "✎" },
   { view: "plan", href: "/ke-hoach", label: "Kế hoạch thực tập", icon: "▦" }, { view: "activities", href: "/hoat-dong", label: "Hoạt động chính", icon: "◇" },
-  { view: "conclusion", href: "/ket-luan", label: "Kết luận", icon: "✓" }, { view: "references", href: "/tai-lieu-tham-khao", label: "Tài liệu tham khảo", icon: "≡" },
-  { view: "appendices", href: "/phu-luc", label: "Phụ lục", icon: "⊞" }, { view: "preview", href: "/xem-truoc", label: "Xem trước", icon: "◉" },
-  { view: "compliance", href: "/kiem-tra", label: "Kiểm tra yêu cầu", icon: "☑" }, { view: "settings", href: "/cai-dat", label: "Cài đặt", icon: "⚙" },
+  { view: "conclusion", href: "/ket-luan", label: "Kết luận", icon: "✓" }, { view: "compliance", href: "/kiem-tra", label: "Kiểm tra yêu cầu", icon: "☑" },
+  { view: "settings", href: "/cai-dat", label: "Cài đặt", icon: "⚙" },
 ];
 const uid = () => crypto.randomUUID(), iso = () => new Date().toISOString(), today = () => new Date().toISOString().slice(0, 10);
 type SaveStatus = "loading" | "locked" | "saving" | "saved" | "error";
@@ -136,7 +135,7 @@ export default function InternshipApp({ view }: { view: View }) {
     <nav>{nav.map(item => <Link key={item.view} href={item.href} className={view === item.view ? "active" : ""}><span>{item.icon}</span>{item.label}{item.view === "compliance" && <em>{getComplianceItems(state).filter(item => item.status === "Đạt").length}</em>}</Link>)}</nav>
   </aside>{menu && <button className="scrim" onClick={() => setMenu(false)} aria-label="Đóng menu" />}
   <main><header className="topbar"><button className="menu-btn" onClick={() => setMenu(true)} aria-label="Mở trình đơn">☰</button><div className="crumb">Không gian làm việc <span>/</span> {nav.find(n => n.view === view)?.label}</div><span className="account-name">{user?.username}</span><span className="user-avatar">{initials || "LH"}</span><button className="logout-btn" onClick={() => void logout()}>Đăng xuất</button></header>
-  <div className="page">{view === "dashboard" && <Dashboard state={state} update={update} />}{view === "logs" && <Logs state={state} update={update} />}{view === "plan" && <Plan state={state} update={update} />}{view === "activities" && <Activities state={state} update={update} />}{view === "conclusion" && <ConclusionView state={state} update={update} />}{view === "compliance" && <Compliance state={state} />}{view === "settings" && <Settings state={state} setState={setState} />}{["references", "appendices", "preview"].includes(view) && <Soon view={view} />}</div><footer className="app-footer"><span>Pay for Pass · Dự án cá nhân · Nhật ký thực tập UEH</span></footer></main><AssistantAgent state={state} view={view} navigate={href => { router.push(href); setMenu(false); }} /></div>;
+  <div className="page">{view === "dashboard" && <Dashboard state={state} update={update} />}{view === "logs" && <Logs state={state} update={update} />}{view === "plan" && <Plan state={state} update={update} />}{view === "activities" && <Activities state={state} update={update} />}{view === "conclusion" && <ConclusionView state={state} update={update} />}{view === "compliance" && <Compliance state={state} />}{view === "settings" && <Settings state={state} setState={setState} />}</div><footer className="app-footer"><span>Pay for Pass · Dự án cá nhân · Nhật ký thực tập UEH</span></footer></main><AssistantAgent state={state} view={view} navigate={href => { router.push(href); setMenu(false); }} /></div>;
 }
 
 function Title({ eyebrow, title, desc, action }: { eyebrow?: string; title: string; desc: string; action?: React.ReactNode }) { return <div className="page-title"><div><small>{eyebrow}</small><h1>{title}</h1><p>{desc}</p></div>{action}</div>; }
@@ -184,7 +183,7 @@ const agentRoutes: { href: string; title: string; patterns: RegExp[] }[] = [
   { href: "/kiem-tra", title: "Kiểm tra yêu cầu", patterns: [/ki[eể]m tra|thi[eế]u|[đd][aạ]t|y[eê]u c[aầ]u/] },
   { href: "/", title: "Tổng quan", patterns: [/t[oổ]ng quan|dashboard|ng[aà]y b[aắ]t [đd][aầ]u|ng[aà]y k[eế]t th[uú]c|[đd][oơ]n v[iị]|setup|thi[eế]t l[aậ]p/] },
   { href: "/cai-dat", title: "Cài đặt", patterns: [/c[aà]i [đd][aặ]t|h[oồ] s[oơ]|x[oó]a d[uữ] li[eệ]u/] },
-  { href: "/xem-truoc", title: "Xem trước", patterns: [/xem tr[uư][oớ]c|preview|xu[aấ]t|b[aá]o c[aá]o/] },
+  { href: "/kiem-tra", title: "Kiểm tra yêu cầu", patterns: [/xem tr[uư][oớ]c|preview|xu[aấ]t|b[aá]o c[aá]o/] },
 ];
 function findAgentRoute(text: string) {
   const normalized = text.toLowerCase();
@@ -262,7 +261,7 @@ function Activities({ state, update }: { state: AppState; update: (fn: (s: AppSt
 function ActivityModal({ activity, logs, onClose, onSave }: { activity: Activity; logs: DailyLog[]; onClose: () => void; onSave: (a: Activity) => void }) {
   const [form, setForm] = useState(activity), set = (key: keyof Activity, value: unknown) => setForm(f => ({ ...f, [key]: value }));
   const fields: [keyof Activity, string][] = [["objective", "Mục tiêu hoạt động"], ["actualProcess", "Quy trình thực hiện thực tế"], ["companyProcedures", "Quy định / quy trình công ty liên quan"], ["workingPapers", "Giấy làm việc sử dụng"], ["recordsUsed", "Hồ sơ / chứng từ sử dụng"], ["recordStorage", "Cách lưu hồ sơ"], ["directSteps", "Các bước tôi trực tiếp thực hiện"], ["result", "Kết quả đạt được"], ["difficulties", "Khó khăn"], ["resolution", "Cách xử lý"], ["knowledgeAndSkills", "Kiến thức / kỹ năng học được"]];
-  return <Modal title={activity.name ? "Chỉnh sửa hoạt động" : "Tạo từ nhật ký"} onClose={onClose} onSubmit={() => form.name.trim() && onSave({ ...form, name: form.name.trim() })} footer="Phụ lục sẽ được liên kết ở giai đoạn 2"><div className="form-grid">
+  return <Modal title={activity.name ? "Chỉnh sửa hoạt động" : "Tạo từ nhật ký"} onClose={onClose} onSubmit={() => form.name.trim() && onSave({ ...form, name: form.name.trim() })} footer="Hoạt động này dùng cho Phần 2 của Nhật ký thực tập"><div className="form-grid">
     <Field label="Tên hoạt động" wide translate={{ text: form.name, onTranslated: value => set("name", value) }}><input value={form.name} onChange={e => set("name", e.target.value)} required /></Field>
     <Field label="Từ ngày"><input type="date" value={form.startDate} onChange={e => set("startDate", e.target.value)} /></Field>
     <Field label="Đến ngày"><input type="date" value={form.endDate} onChange={e => set("endDate", e.target.value)} /></Field>
@@ -282,7 +281,6 @@ function ConclusionView({ state, update }: { state: AppState; update: (fn: (s: A
 }
 function Compliance({ state }: { state: AppState }) { const checks = getComplianceItems(state); return <><Title eyebrow="UEH 2026" title="Kiểm tra yêu cầu" desc="Đối chiếu tiến độ hiện tại với các yêu cầu của nhật ký thực tập." /><div className="checks">{checks.map(item => <div key={item.label}><span className={item.status === "Đạt" ? "ok" : "pending"}>{item.status === "Đạt" ? "✓" : item.status === "Cần kiểm tra" ? "?" : "!"}</span><b>{item.label}</b><em>{item.status}</em></div>)}</div></>; }
 function Settings({ state, setState }: { state: AppState; setState: (s: AppState) => void }) { const setInternship = (patch: Partial<AppState["internship"]>) => setState(updateInternship(state, patch)); return <><Title eyebrow="CÁ NHÂN HOÁ" title="Cài đặt" desc="Quản lý hồ sơ và dữ liệu của bạn." /><div className="settings"><section className="panel"><h3>Hồ sơ thực tập</h3><Field label="Họ và tên"><input value={state.profile.fullName} onChange={e => setState({ ...state, profile: { ...state.profile, fullName: e.target.value } })} onBlur={e => setState({ ...state, profile: { ...state.profile, fullName: e.target.value.trim() } })} /></Field><Field label="Đơn vị thực tập"><input value={state.internship.organization} placeholder="Nhập tên công ty/đơn vị" onChange={e => setInternship({ organization: e.target.value })} onBlur={e => setInternship({ organization: e.target.value.trim() })} /></Field><Field label="Ngày bắt đầu"><input type="date" value={state.internship.startDate} max={state.internship.endDate || undefined} onChange={e => setInternship({ startDate: e.target.value })} /></Field><Field label="Ngày kết thúc"><input type="date" value={state.internship.endDate} min={state.internship.startDate || undefined} onChange={e => setInternship({ endDate: e.target.value })} /></Field></section><section className="panel"><h3>Dữ liệu nhật ký</h3><p>Mọi thay đổi được tự động lưu vào dữ liệu của tài khoản hiện tại.</p><button className="danger-btn clear-data-btn" onClick={() => confirm("Xoá toàn bộ nội dung nhật ký?") && setState(resetState(false))}>Xoá dữ liệu và bắt đầu trống</button></section></div></>; }
-function Soon({ view }: { view: View }) { const names: Record<string, string> = { references: "Tài liệu tham khảo", appendices: "Phụ lục", preview: "Xem trước tài liệu" }; return <><Title eyebrow="GIAI ĐOẠN 2" title={names[view]} desc="Cấu trúc dữ liệu đã sẵn sàng; tính năng tài liệu sẽ được triển khai ở giai đoạn kế tiếp." /><div className="coming"><span>⌁</span><h2>Đã có trong lộ trình giai đoạn 2</h2><p>Bản xem trước A4, phần kiểm tra yêu cầu hoàn chỉnh, chức năng xuất Word và PDF sẽ dùng chung dữ liệu của giai đoạn 1.</p><Link href="/">Về Tổng quan</Link></div></>; }
 type TranslationControl = { text: string; onTranslated: (value: string) => void };
 function Field({ label, children, wide = false, translate }: { label: string; children: React.ReactNode; wide?: boolean; translate?: TranslationControl }) { return <label className={wide ? "field wide" : "field"}><span>{label}{translate && <TranslateButton {...translate} />}</span>{children}</label>; }
 function TranslateButton({ text, onTranslated }: TranslationControl) {

@@ -40,7 +40,5 @@ export function getComplianceItems(state: AppState): ComplianceItem[] {
     { label: "Có trang bìa", status: "Cần kiểm tra" },
     { label: "Có mục lục", status: "Cần kiểm tra" },
     { label: "Có danh mục từ viết tắt", status: "Cần kiểm tra" },
-    { label: "Có tài liệu tham khảo nếu sử dụng nguồn", status: state.references.length ? "Đạt" : "Cần kiểm tra" },
-    { label: "Có phụ lục nếu có minh chứng", status: state.appendices.length ? "Đạt" : "Cần kiểm tra" },
   ];
 }
