@@ -34,7 +34,7 @@ export function createInitialState(withDemo = false): AppState {
   return {
     version: 1,
     profile: { id: profileId, fullName: withDemo ? "Sinh viên UEH" : "", studentId: "", university: "Đại học Kinh tế TP.HCM", faculty: "Khoa Kế toán", major: "Kiểm toán", className: "" },
-    internship: { id: internshipId, profileId, organization: withDemo ? "Đơn vị thực tập" : "", position: "Thực tập sinh kiểm toán", supervisor: "", startDate: withDemo ? "2026-01-05" : "", endDate: withDemo ? "2026-03-27" : "", totalWeeks: 12, type: "graduation_internship" },
+    internship: { id: internshipId, profileId, organization: withDemo ? "Đơn vị thực tập" : "", topicName: "", position: "Thực tập sinh kiểm toán", supervisor: "", startDate: withDemo ? "2026-01-05" : "", endDate: withDemo ? "2026-03-27" : "", totalWeeks: 12, type: "graduation_internship" },
     plans, dailyLogs: logs, activities: [], weeklySummaries: [],
     conclusion: {
       id: id(), internshipId,

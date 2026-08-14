@@ -45,6 +45,7 @@ export function removeUntouchedDemoData(state: AppState): AppState | null {
       ...clean.internship,
       profileId: state.profile.id,
       organization: state.internship.organization === "Đơn vị thực tập" ? "" : state.internship.organization,
+      topicName: state.internship.topicName,
       position: state.internship.position,
       supervisor: state.internship.supervisor,
       startDate: state.internship.startDate === "2026-01-05" ? "" : state.internship.startDate,
