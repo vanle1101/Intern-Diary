@@ -497,3 +497,18 @@
     gap: 13px;
   }
 }
+
+.access-page {
+  grid-template-columns: minmax(620px, min(53.6vw, calc(100vh * .953))) 1fr;
+}
+
+.access-page .access-intro.locked-art {
+  background: url("/auth-ueh-left-fixed.png") center center / 100% 100% no-repeat #eef9ff;
+}
+
+.locked-art .auth-art-bg,
+.locked-art .auth-art-dots,
+.locked-art .auth-art-content,
+.locked-art .auth-art-quote {
+  display: none !important;
+}
