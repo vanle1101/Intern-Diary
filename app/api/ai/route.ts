@@ -1,6 +1,7 @@
+import { timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
 
-type AiAction = "rewrite" | "weekly_summary" | "activity_draft" | "conclusion_draft" | "review";
+type AiAction = "rewrite" | "weekly_summary" | "activity_draft" | "conclusion_draft" | "review" | "translate_vi_en";
 
 const instructions: Record<AiAction, string> = {
   rewrite: "Viết lại ghi chú thành văn phong phù hợp với Nhật ký thực tập đại học.",
@@ -8,9 +9,19 @@ const instructions: Record<AiAction, string> = {
   activity_draft: "Tổng hợp các bản ghi nhật ký liên quan thành bản nháp mô tả một hoạt động chính.",
   conclusion_draft: "Tổng hợp dữ liệu đã cung cấp thành bản nháp kết luận thực tập.",
   review: "Rà soát và chỉ ra nội dung sơ sài, thiếu kết quả, bài học, quy trình hoặc không nhất quán.",
+  translate_vi_en: "Dịch nguyên văn nội dung từ tiếng Việt sang tiếng Anh tự nhiên, phù hợp văn phong nhật ký thực tập ngành Kiểm toán.",
 };
 
+function isAuthorized(request: Request) {
+  const expected = process.env.APP_ACCESS_KEY;
+  const supplied = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
+  if (!expected || !supplied) return false;
+  const expectedBuffer = Buffer.from(expected), suppliedBuffer = Buffer.from(supplied);
+  return expectedBuffer.length === suppliedBuffer.length && timingSafeEqual(expectedBuffer, suppliedBuffer);
+}
+
 export async function POST(request: Request) {
+  if (!isAuthorized(request)) return NextResponse.json({ error: "Mã truy cập không đúng." }, { status: 401 });
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) return NextResponse.json({ error: "Chưa cấu hình GEMINI_API_KEY." }, { status: 503 });
 
@@ -21,14 +32,19 @@ export async function POST(request: Request) {
   const serialized = JSON.stringify(body.sourceData);
   if (serialized.length > 120_000) return NextResponse.json({ error: "Dữ liệu vượt giới hạn 120.000 ký tự." }, { status: 413 });
 
+  const translating = body.action === "translate_vi_en";
   const response = await fetch("https://generativelanguage.googleapis.com/v1beta/openai/chat/completions", {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
     body: JSON.stringify({
       model: process.env.GEMINI_MODEL ?? "gemini-3.6-flash",
       messages: [
-        { role: "system", content: "Bạn hỗ trợ viết Nhật ký thực tập tốt nghiệp ngành Kiểm toán. Chỉ được dùng dữ liệu người dùng cung cấp. Tuyệt đối không tự tạo số liệu, tên khách hàng, chứng từ, thủ tục hoặc công việc. Nếu dữ liệu thiếu, đánh dấu [CẦN BỔ SUNG]. Không suy đoán thông tin nhạy cảm. Trả lời bằng tiếng Việt, văn phong học thuật tự nhiên." },
-        { role: "user", content: `${instructions[body.action]}\n${body.instruction ?? ""}\n\nDỮ LIỆU NGUỒN:\n${serialized}` },
+        { role: "system", content: translating
+          ? "You are a Vietnamese-to-English translator specializing in economics, accounting and auditing. Use standard professional terminology used in audit working papers and academic internship reports (for example: audit evidence, audit sampling, substantive procedures, internal controls, fixed assets, prepaid expenses, reconciliation, vouching, tracing and review). Preserve every fact, number, Vietnamese account code such as TK 152/TK 211/TK 242, proper noun and line break. Choose the technically correct accounting or auditing meaning when a Vietnamese term is ambiguous. Do not explain, summarize, expand, censor or invent anything. Return only the English translation without quotation marks or Markdown. If the input is already English, return it unchanged."
+          : "Bạn hỗ trợ viết Nhật ký thực tập tốt nghiệp ngành Kiểm toán. Chỉ được dùng dữ liệu người dùng cung cấp. Tuyệt đối không tự tạo số liệu, tên khách hàng, chứng từ, thủ tục hoặc công việc. Nếu dữ liệu thiếu, đánh dấu [CẦN BỔ SUNG]. Không suy đoán thông tin nhạy cảm. Trả lời bằng tiếng Việt, văn phong học thuật tự nhiên." },
+        { role: "user", content: translating && typeof body.sourceData === "string"
+          ? body.sourceData
+          : `${instructions[body.action]}\n${body.instruction ?? ""}\n\nDỮ LIỆU NGUỒN:\n${serialized}` },
       ],
     }),
   });
