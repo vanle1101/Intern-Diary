@@ -41,8 +41,8 @@ function userPath(username: string) {
 }
 
 export function validateCredentials(username: unknown, password: unknown) {
-  if (typeof username !== "string" || !/^[A-Za-z0-9._@-]{3,80}$/.test(username.trim())) {
-    return "Tên đăng nhập hoặc email phải có 3–80 ký tự, chỉ gồm chữ, số, @, dấu chấm, gạch dưới hoặc gạch ngang.";
+  if (typeof username !== "string" || !/^[A-Za-z0-9._-]{3,32}$/.test(username.trim())) {
+    return "Tên đăng nhập phải có 3–32 ký tự, chỉ gồm chữ, số, dấu chấm, gạch dưới hoặc gạch ngang.";
   }
   if (typeof password !== "string" || password.length < 6 || password.length > 128) {
     return "Mật khẩu phải có từ 6 đến 128 ký tự.";
