@@ -11,7 +11,7 @@
   min-height: 100vh;
   position: relative;
   overflow: hidden;
-  background: #eaf7fc;
+  background: #eaf7fc url("/auth-ueh-left.png?v=locked-v2") center center / cover no-repeat;
 }
 
 .locked-art {
