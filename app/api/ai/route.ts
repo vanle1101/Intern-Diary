@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "../../../lib/auth";
 
-type AiAction = "rewrite" | "weekly_summary" | "activity_draft" | "conclusion_draft" | "review" | "translate_vi_en";
+type AiAction = "rewrite" | "weekly_summary" | "activity_draft" | "conclusion_draft" | "review" | "translate_vi_en" | "assistant";
 
 const instructions: Record<AiAction, string> = {
   rewrite: "Viết lại ghi chú thành văn phong phù hợp với Nhật ký thực tập đại học.",
@@ -10,6 +10,7 @@ const instructions: Record<AiAction, string> = {
   conclusion_draft: "Tổng hợp dữ liệu đã cung cấp thành bản nháp kết luận thực tập.",
   review: "Rà soát và chỉ ra nội dung sơ sài, thiếu kết quả, bài học, quy trình hoặc không nhất quán.",
   translate_vi_en: "Dịch nguyên văn nội dung từ tiếng Việt sang tiếng Anh tự nhiên, phù hợp văn phong nhật ký thực tập ngành Kiểm toán.",
+  assistant: "Trả lời như trợ lý thao tác trong web app Nhật ký thực tập. Ưu tiên hướng dẫn bước tiếp theo thật ngắn, rõ, đúng dữ liệu hiện có.",
 };
 
 export async function POST(request: NextRequest) {
@@ -24,7 +25,7 @@ export async function POST(request: NextRequest) {
   const serialized = JSON.stringify(body.sourceData);
   if (serialized.length > 120_000) return NextResponse.json({ error: "Dữ liệu vượt giới hạn 120.000 ký tự." }, { status: 413 });
 
-  const translating = body.action === "translate_vi_en";
+  const translating = body.action === "translate_vi_en", assistant = body.action === "assistant";
   const response = await fetch("https://generativelanguage.googleapis.com/v1beta/openai/chat/completions", {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
@@ -33,7 +34,9 @@ export async function POST(request: NextRequest) {
       messages: [
         { role: "system", content: translating
           ? "You are a Vietnamese-to-English translator specializing in economics, accounting and auditing. Use standard professional terminology used in audit working papers and academic internship reports (for example: audit evidence, audit sampling, substantive procedures, internal controls, fixed assets, prepaid expenses, reconciliation, vouching, tracing and review). Preserve every fact, number, Vietnamese account code such as TK 152/TK 211/TK 242, proper noun and line break. Choose the technically correct accounting or auditing meaning when a Vietnamese term is ambiguous. Do not explain, summarize, expand, censor or invent anything. Return only the English translation without quotation marks or Markdown. If the input is already English, return it unchanged."
-          : "Bạn hỗ trợ viết Nhật ký thực tập tốt nghiệp ngành Kiểm toán. Chỉ được dùng dữ liệu người dùng cung cấp. Tuyệt đối không tự tạo số liệu, tên khách hàng, chứng từ, thủ tục hoặc công việc. Nếu dữ liệu thiếu, đánh dấu [CẦN BỔ SUNG]. Trả lời bằng tiếng Việt, văn phong học thuật tự nhiên." },
+          : assistant
+            ? "Bạn là trợ lý agent trong web app Nhật ký thực tập UEH. Trả lời bằng tiếng Việt, thân thiện, ngắn gọn. Nếu người dùng muốn thao tác trong app, chỉ rõ tab/nơi cần vào. Không bịa dữ liệu nhật ký, công ty, chứng từ hoặc số liệu."
+            : "Bạn hỗ trợ viết Nhật ký thực tập tốt nghiệp ngành Kiểm toán. Chỉ được dùng dữ liệu người dùng cung cấp. Tuyệt đối không tự tạo số liệu, tên khách hàng, chứng từ, thủ tục hoặc công việc. Nếu dữ liệu thiếu, đánh dấu [CẦN BỔ SUNG]. Trả lời bằng tiếng Việt, văn phong học thuật tự nhiên." },
         { role: "user", content: translating && typeof body.sourceData === "string"
           ? body.sourceData
           : `${instructions[body.action]}\n${body.instruction ?? ""}\n\nDỮ LIỆU NGUỒN:\n${serialized}` },

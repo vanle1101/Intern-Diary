@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import type { Activity, AppState, Conclusion, DailyLog, InternshipPlan } from "../lib/models";
 import { getComplianceItems, getProgress } from "../lib/progress";
@@ -49,8 +50,19 @@ async function translateToEnglish(sourceData: string) {
   if (!response.ok || !data.text) throw new Error(data.error || "Không thể dịch nội dung.");
   return data.text.trim();
 }
+async function askAssistant(sourceData: unknown, instruction: string) {
+  const response = await fetch("/api/ai", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ action: "assistant", sourceData, instruction }),
+  });
+  const data = await response.json() as { text?: string; error?: string };
+  if (!response.ok || !data.text) throw new Error(data.error || "Trợ lý chưa phản hồi được.");
+  return data.text.trim();
+}
 
 export default function InternshipApp({ view }: { view: View }) {
+  const router = useRouter();
   const [state, setState] = useState<AppState | null>(() => memoryState), [status, setStatus] = useState<SaveStatus>(() => memoryState && memoryUser ? "saved" : "loading"), [menu, setMenu] = useState(false), [message, setMessage] = useState("");
   const [authMode, setAuthMode] = useState<AuthMode>("login"), [fullName, setFullName] = useState(""), [username, setUsername] = useState(""), [password, setPassword] = useState(""), [showPassword, setShowPassword] = useState(false), [user, setUser] = useState<CurrentUser | null>(() => memoryUser), [authWorking, setAuthWorking] = useState(false);
   const skipInitialSave = useRef(true);
@@ -124,7 +136,7 @@ export default function InternshipApp({ view }: { view: View }) {
     <nav>{nav.map(item => <Link key={item.view} href={item.href} className={view === item.view ? "active" : ""}><span>{item.icon}</span>{item.label}{item.view === "compliance" && <em>{getComplianceItems(state).filter(item => item.status === "Đạt").length}</em>}</Link>)}</nav>
   </aside>{menu && <button className="scrim" onClick={() => setMenu(false)} aria-label="Đóng menu" />}
   <main><header className="topbar"><button className="menu-btn" onClick={() => setMenu(true)} aria-label="Mở trình đơn">☰</button><div className="crumb">Không gian làm việc <span>/</span> {nav.find(n => n.view === view)?.label}</div><span className="account-name">{user?.username}</span><span className="user-avatar">{initials || "LH"}</span><button className="logout-btn" onClick={() => void logout()}>Đăng xuất</button></header>
-  <div className="page">{view === "dashboard" && <Dashboard state={state} update={update} />}{view === "logs" && <Logs state={state} update={update} />}{view === "plan" && <Plan state={state} update={update} />}{view === "activities" && <Activities state={state} update={update} />}{view === "conclusion" && <ConclusionView state={state} update={update} />}{view === "compliance" && <Compliance state={state} />}{view === "settings" && <Settings state={state} setState={setState} />}{["references", "appendices", "preview"].includes(view) && <Soon view={view} />}</div><footer className="app-footer"><span>Pay for Pass · Dự án cá nhân · Nhật ký thực tập UEH</span></footer></main></div>;
+  <div className="page">{view === "dashboard" && <Dashboard state={state} update={update} />}{view === "logs" && <Logs state={state} update={update} />}{view === "plan" && <Plan state={state} update={update} />}{view === "activities" && <Activities state={state} update={update} />}{view === "conclusion" && <ConclusionView state={state} update={update} />}{view === "compliance" && <Compliance state={state} />}{view === "settings" && <Settings state={state} setState={setState} />}{["references", "appendices", "preview"].includes(view) && <Soon view={view} />}</div><footer className="app-footer"><span>Pay for Pass · Dự án cá nhân · Nhật ký thực tập UEH</span></footer></main><AssistantAgent state={state} view={view} navigate={href => { router.push(href); setMenu(false); }} /></div>;
 }
 
 function Title({ eyebrow, title, desc, action }: { eyebrow?: string; title: string; desc: string; action?: React.ReactNode }) { return <div className="page-title"><div><small>{eyebrow}</small><h1>{title}</h1><p>{desc}</p></div>{action}</div>; }
@@ -163,6 +175,50 @@ function Stat({ icon, value, label, note }: { icon: string; value: string | numb
 function Head({ title, sub }: { title: string; sub: string }) { return <div className="panel-head"><h3>{title}</h3><p>{sub}</p></div>; }
 function Progress({ no, title, value, tone = "green" }: { no: string; title: string; value: number; tone?: string }) { return <div className="progress"><span className={tone}>{no}</span><div><b>{title}</b><i><em className={tone} style={{ width: `${value}%` }} /></i></div><strong>{value}%</strong></div>; }
 function Task({ done, text, sub, href }: { done: boolean; text: string; sub: string; href: string }) { return <Link className="task" href={href}><span className={done ? "done" : ""}>{done ? "✓" : ""}</span><div><b>{text}</b><small>{sub}</small></div><em>›</em></Link>; }
+type AgentMessage = { role: "agent" | "user"; text: string };
+const agentRoutes: { href: string; title: string; patterns: RegExp[] }[] = [
+  { href: "/nhat-ky", title: "Nhật ký hằng ngày", patterns: [/nh[aậ]p|ghi|th[eê]m|vi[eế]t/, /nh[aậ]t k[yý]|log|c[oô]ng vi[eệ]c/] },
+  { href: "/ke-hoach", title: "Kế hoạch thực tập", patterns: [/k[eế] ho[aạ]ch|12 tu[aầ]n|m[uụ]c ti[eê]u/] },
+  { href: "/hoat-dong", title: "Hoạt động chính", patterns: [/ho[aạ]t [đd][oộ]ng|gom|ph[aầ]n 2/] },
+  { href: "/ket-luan", title: "Kết luận", patterns: [/k[eế]t lu[aậ]n|b[aà]i h[oọ]c|h[aạ]n ch[eế]|ph[aầ]n 3/] },
+  { href: "/kiem-tra", title: "Kiểm tra yêu cầu", patterns: [/ki[eể]m tra|thi[eế]u|[đd][aạ]t|y[eê]u c[aầ]u/] },
+  { href: "/", title: "Tổng quan", patterns: [/t[oổ]ng quan|dashboard|ng[aà]y b[aắ]t [đd][aầ]u|ng[aà]y k[eế]t th[uú]c|[đd][oơ]n v[iị]|setup|thi[eế]t l[aậ]p/] },
+  { href: "/cai-dat", title: "Cài đặt", patterns: [/c[aà]i [đd][aặ]t|h[oồ] s[oơ]|x[oó]a d[uữ] li[eệ]u/] },
+  { href: "/xem-truoc", title: "Xem trước", patterns: [/xem tr[uư][oớ]c|preview|xu[aấ]t|b[aá]o c[aá]o/] },
+];
+function findAgentRoute(text: string) {
+  const normalized = text.toLowerCase();
+  const exact = agentRoutes.find(route => route.patterns.every(pattern => pattern.test(normalized)));
+  return exact ?? (/nh[aậ]p|ghi|vi[eế]t|th[eê]m/.test(normalized) ? agentRoutes[0] : undefined);
+}
+function AssistantAgent({ state, view, navigate }: { state: AppState; view: View; navigate: (href: string) => void }) {
+  const [open, setOpen] = useState(false), [input, setInput] = useState(""), [working, setWorking] = useState(false);
+  const [messages, setMessages] = useState<AgentMessage[]>([{ role: "agent", text: "Bạn cần nhập nhật ký, lập kế hoạch hay kiểm tra thiếu gì cứ nói mình mở đúng chỗ cho." }]);
+  const summary = () => ({ currentTab: nav.find(item => item.view === view)?.label, internship: state.internship, counts: { dailyLogs: state.dailyLogs.length, activities: state.activities.length, plansDone: state.plans.filter(plan => plan.workContent.trim()).length, conclusionDone: Object.values(state.conclusion).filter(value => typeof value === "string" && value.trim()).length } });
+  const send = async (preset?: string) => {
+    const text = (preset ?? input).trim();
+    if (!text || working) return;
+    setInput(""); setMessages(items => [...items, { role: "user", text }]);
+    const route = findAgentRoute(text);
+    if (route) {
+      navigate(route.href);
+      setMessages(items => [...items, { role: "agent", text: `Ok, mình mở tab ${route.title} cho bạn. Nếu muốn nhập mới thì bấm nút thêm/chỉnh sửa trong tab này.` }]);
+      setOpen(true);
+      return;
+    }
+    const translating = /^dịch|^dich|vi\s*->\s*en/i.test(text);
+    setWorking(true);
+    try {
+      const answer = translating ? await translateToEnglish(text.replace(/^dịch\s*|^dich\s*|vi\s*->\s*en\s*/i, "")) : await askAssistant(summary(), text);
+      setMessages(items => [...items, { role: "agent", text: answer }]);
+    } catch (error) {
+      setMessages(items => [...items, { role: "agent", text: error instanceof Error ? error.message : "Mình chưa xử lý được câu này." }]);
+    } finally {
+      setWorking(false); setOpen(true);
+    }
+  };
+  return <div className={open ? "agent-widget open" : "agent-widget"}><button className="agent-fab" onClick={() => setOpen(value => !value)} aria-label="Mở trợ lý AI"><span>AI</span></button>{open && <section className="agent-panel" aria-label="Trợ lý AI"><header><div><small>TRỢ LÝ AGENT</small><b>Muốn làm gì, nói mình mở đúng tab</b></div><button onClick={() => setOpen(false)} aria-label="Đóng">×</button></header><div className="agent-messages">{messages.map((message, index) => <p key={index} className={message.role}>{message.text}</p>)}{working && <p className="agent">Đang nghĩ chút…</p>}</div><div className="agent-suggest"><button onClick={() => void send("Tôi muốn nhập nhật ký")}>Nhập nhật ký</button><button onClick={() => void send("Kiểm tra tôi còn thiếu gì")}>Kiểm tra thiếu gì</button><button onClick={() => void send("Setup ngày bắt đầu")}>Setup lịch</button></div><form onSubmit={event => { event.preventDefault(); void send(); }}><input value={input} onChange={event => setInput(event.target.value)} placeholder="Ví dụ: t muốn nhập nhật ký hôm nay" /><button disabled={working}>Gửi</button></form></section>}</div>;
+}
 
 function Logs({ state, update }: { state: AppState; update: (fn: (s: AppState) => AppState) => void }) {
   const [query, setQuery] = useState(""), [week, setWeek] = useState(0), [workType, setWorkType] = useState(""), [editing, setEditing] = useState<DailyLog | null>(null);
