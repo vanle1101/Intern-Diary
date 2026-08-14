@@ -8,17 +8,19 @@ import type { Activity, AppState, Conclusion, DailyLog, InternshipPlan } from ".
 import { getComplianceItems, getProgress } from "../lib/progress";
 import { resetState } from "../lib/storage";
 
-export type View = "dashboard" | "logs" | "plan" | "activities" | "conclusion" | "compliance" | "settings";
-const nav: { view: View; href: string; label: string; icon: string }[] = [
+export type View = "dashboard" | "logs" | "plan" | "activities" | "conclusion" | "compliance" | "settings" | "users";
+const nav: { view: View; href: string; label: string; icon: string; adminOnly?: boolean }[] = [
   { view: "dashboard", href: "/", label: "Tổng quan", icon: "⌂" }, { view: "logs", href: "/nhat-ky", label: "Nhật ký hằng ngày", icon: "✎" },
   { view: "plan", href: "/ke-hoach", label: "Kế hoạch thực tập", icon: "▦" }, { view: "activities", href: "/hoat-dong", label: "Hoạt động chính", icon: "◇" },
   { view: "conclusion", href: "/ket-luan", label: "Kết luận", icon: "✓" }, { view: "compliance", href: "/kiem-tra", label: "Kiểm tra yêu cầu", icon: "☑" },
   { view: "settings", href: "/cai-dat", label: "Cài đặt", icon: "⚙" },
+  { view: "users", href: "/nguoi-dung", label: "Người đã đăng ký", icon: "♙", adminOnly: true },
 ];
 const uid = () => crypto.randomUUID(), iso = () => new Date().toISOString(), today = () => new Date().toISOString().slice(0, 10);
 type SaveStatus = "loading" | "locked" | "saving" | "saved" | "error";
 type AuthMode = "login" | "register";
-type CurrentUser = { id: string; username: string; fullName: string };
+type CurrentUser = { id: string; username: string; fullName: string; role: "admin" | "user" };
+type AdminUser = CurrentUser & { createdAt: string; online: boolean; lastSeen: string | null };
 let memoryState: AppState | null = null;
 let memoryUser: CurrentUser | null = null;
 
@@ -65,6 +67,7 @@ export default function InternshipApp({ view }: { view: View }) {
   const router = useRouter();
   const [state, setState] = useState<AppState | null>(() => memoryState), [status, setStatus] = useState<SaveStatus>(() => memoryState && memoryUser ? "saved" : "loading"), [menu, setMenu] = useState(false), [message, setMessage] = useState("");
   const [authMode, setAuthMode] = useState<AuthMode>("login"), [fullName, setFullName] = useState(""), [username, setUsername] = useState(""), [password, setPassword] = useState(""), [showPassword, setShowPassword] = useState(false), [user, setUser] = useState<CurrentUser | null>(() => memoryUser), [authWorking, setAuthWorking] = useState(false);
+  const [onlineCount, setOnlineCount] = useState(0);
   const skipInitialSave = useRef(true);
   const isLocalPreviewUser = user?.id === "local-preview";
   const openJournal = async (currentUser: CurrentUser, showLoading = true) => {
@@ -84,8 +87,11 @@ export default function InternshipApp({ view }: { view: View }) {
   };
   useEffect(() => {
     if (memoryState && memoryUser) return;
-    if (location.hostname === "localhost" && new URLSearchParams(location.search).get("dev") === "1") {
-      const previewUser = { id: "local-preview", username: "preview", fullName: "Sinh viên UEH" };
+    const previewMode = new URLSearchParams(location.search).get("dev");
+    if (location.hostname === "localhost" && (previewMode === "1" || previewMode === "admin")) {
+      const previewUser: CurrentUser = previewMode === "admin"
+        ? { id: "local-preview", username: "lehongvan", fullName: "Lê Hồng Vân", role: "admin" }
+        : { id: "local-preview", username: "preview", fullName: "Sinh viên UEH", role: "user" };
       skipInitialSave.current = true;
       memoryState = resetState(false);
       memoryUser = previewUser;
@@ -118,6 +124,19 @@ export default function InternshipApp({ view }: { view: View }) {
     return () => clearTimeout(timer);
   }, [state, user]);
   useEffect(() => { const warn = (e: BeforeUnloadEvent) => { if (status === "saving") e.preventDefault(); }; addEventListener("beforeunload", warn); return () => removeEventListener("beforeunload", warn); }, [status]);
+  useEffect(() => {
+    if (!user) { setOnlineCount(0); return; }
+    if (isLocalPreviewUser) { setOnlineCount(1); return; }
+    let active = true;
+    const heartbeat = () => void fetch("/api/presence", { method: "POST", cache: "no-store" })
+      .then(response => response.json()).then((data: { count?: number }) => { if (active && typeof data.count === "number") setOnlineCount(data.count); })
+      .catch(() => undefined);
+    heartbeat();
+    const timer = setInterval(heartbeat, 60_000);
+    const visible = () => { if (document.visibilityState === "visible") heartbeat(); };
+    document.addEventListener("visibilitychange", visible);
+    return () => { active = false; clearInterval(timer); document.removeEventListener("visibilitychange", visible); };
+  }, [user, isLocalPreviewUser]);
   const submitAuth = async () => {
     if (authWorking) return;
     setAuthWorking(true); setMessage("");
@@ -134,11 +153,13 @@ export default function InternshipApp({ view }: { view: View }) {
     }
   };
   const logout = async () => {
+    if (!isLocalPreviewUser) await fetch("/api/presence", { method: "DELETE" }).catch(() => undefined);
     await fetch("/api/auth/logout", { method: "POST" }).catch(() => undefined);
     memoryState = null; memoryUser = null;
     setState(null); setUser(null); setPassword(""); setMessage(""); setStatus("locked"); setMenu(false);
   };
   const initials = (user?.fullName || user?.username || "LH").split(/\s+/).filter(Boolean).slice(-2).map(part => part[0]).join("").toUpperCase();
+  const visibleNav = nav.filter(item => !item.adminOnly || user?.role === "admin");
   const isRegister = authMode === "register";
   if (status === "locked") return <div className="access-page"><section className="access-intro locked-art" aria-label="Nhật ký thực tập UEH" onContextMenu={e => e.preventDefault()}><div className="auth-art-bg" aria-hidden="true" /><div className="auth-art-dots" aria-hidden="true" /><div className="auth-art-content"><img className="auth-art-logo" src="/ueh-wordmark-transparent.png?v=sharp-v1" alt="UEH University" draggable={false} /><h2><span>NHẬT KÝ</span><b>THỰC TẬP UEH</b></h2><i className="auth-art-rule" /><p>Lưu lại hành trình thực tập, phát triển kỹ năng và hoàn thiện bản thân mỗi ngày.</p><div className="auth-art-features"><article><span>▣</span><b>Theo dõi hằng ngày</b><small>Dễ dàng ghi chép và quản lý tiến độ</small></article><article><span>▤</span><b>Báo cáo tổng quan</b><small>Thống kê và đánh giá quá trình thực tập</small></article><article><span>▥</span><b>Xuất báo cáo</b><small>Tạo báo cáo chuyên nghiệp nhanh chóng</small></article></div></div><strong className="auth-art-quote">“Học để làm – Làm để dẫn đầu – Lead the Change”</strong></section><form className="access-card" aria-busy={authWorking} onSubmit={e => { e.preventDefault(); void submitAuth(); }}><div className="access-form"><small className="auth-kicker">NHẬT KÝ THỰC TẬP</small><i className="auth-rule" /><h1>{isRegister ? "Tạo tài khoản nhật ký" : "Chào mừng bạn quay lại!"}</h1><p>{isRegister ? "Đăng ký để bắt đầu quản lý nhật ký thực tập cá nhân." : "Đăng nhập để tiếp tục nhật ký thực tập"}</p>{isRegister && <label><span>Họ và tên</span><div className="auth-input"><em className="auth-field-icon user" aria-hidden="true" /><input disabled={authWorking} autoComplete="name" placeholder="Nhập họ và tên của bạn" value={fullName} onChange={e => setFullName(e.target.value)} minLength={2} maxLength={80} required /></div></label>}<label><span>Tên đăng nhập</span><div className="auth-input"><em className="auth-field-icon user" aria-hidden="true" /><input disabled={authWorking} autoComplete="username" placeholder="Nhập tên đăng nhập" value={username} onChange={e => setUsername(e.target.value)} minLength={3} maxLength={32} pattern="[A-Za-z0-9._-]+" required /></div></label><label><span>Mật khẩu</span><div className="auth-input"><em className="auth-field-icon lock" aria-hidden="true" /><input disabled={authWorking} type={showPassword ? "text" : "password"} autoComplete={isRegister ? "new-password" : "current-password"} placeholder="Nhập mật khẩu" value={password} onChange={e => setPassword(e.target.value)} minLength={6} maxLength={128} required /><button type="button" className="auth-eye" disabled={authWorking} aria-label={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"} aria-pressed={showPassword} onClick={() => setShowPassword(value => !value)}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z" /><circle cx="12" cy="12" r="3" /></svg></button></div></label>{!isRegister && <div className="auth-row"><label className="remember"><input type="checkbox" disabled={authWorking} />Ghi nhớ đăng nhập</label></div>}{message && <div className="access-error">{message}</div>}<button className="primary-btn auth-submit" disabled={authWorking}>{isRegister ? "Tạo tài khoản" : "Đăng nhập"}</button><button type="button" className="auth-mini-switch" disabled={authWorking} onClick={() => { setAuthMode(isRegister ? "login" : "register"); setMessage(""); }}>{isRegister ? "Quay lại đăng nhập" : "Tạo tài khoản mới"}</button></div><footer><strong>Pay to Pass</strong><nav><span>Dự án cá nhân</span><span>Nhật ký thực tập UEH</span></nav></footer></form></div>;
   if (!state) return null;
@@ -160,10 +181,34 @@ export default function InternshipApp({ view }: { view: View }) {
   };
   return <div className="app-shell"><aside className={menu ? "sidebar open" : "sidebar"}>
     <Link className="brand ueh-sidebar-logo locked-art" href="/" onContextMenu={e => e.preventDefault()}><img src="/ueh-wordmark.png?v=locked-v3" alt="UEH University" draggable={false} /></Link>
-    <nav>{nav.map(item => <Link key={item.view} href={item.href} className={view === item.view ? "active" : ""}><span>{item.icon}</span>{item.label}{item.view === "compliance" && <em>{getComplianceItems(state).filter(item => item.status === "Đạt").length}</em>}</Link>)}</nav>
+    <nav>{visibleNav.map(item => <Link key={item.view} href={item.href} className={view === item.view ? "active" : ""}><span>{item.icon}</span>{item.label}{item.view === "compliance" && <em>{getComplianceItems(state).filter(item => item.status === "Đạt").length}</em>}</Link>)}</nav>
+    <div className="online-widget"><span aria-hidden="true" /><div><b>{onlineCount} người đang online</b><small>{user?.role === "admin" ? "Xem chi tiết trong mục Người đã đăng ký" : "Cập nhật theo thời gian thực"}</small></div></div>
   </aside>{menu && <button className="scrim" onClick={() => setMenu(false)} aria-label="Đóng menu" />}
-  <main><header className="topbar"><button className="menu-btn" onClick={() => setMenu(true)} aria-label="Mở trình đơn">☰</button><div className="crumb">Không gian làm việc <span>/</span> {nav.find(n => n.view === view)?.label}</div><span className="account-name">{user?.username}</span><span className="user-avatar">{initials || "LH"}</span><button className="logout-btn" onClick={() => void logout()}>Đăng xuất</button></header>
-  <div className="page">{view === "dashboard" && <Dashboard state={state} />}{view === "logs" && <Logs state={state} update={update} />}{view === "plan" && <Plan state={state} update={update} />}{view === "activities" && <Activities state={state} update={update} />}{view === "conclusion" && <ConclusionView state={state} update={update} />}{view === "compliance" && <Compliance state={state} />}{view === "settings" && <Settings state={state} setState={setState} saveState={saveSettings} />}</div><footer className="app-footer"><span>Pay to Pass · Dự án cá nhân · Nhật ký thực tập UEH</span></footer></main><AssistantAgent state={state} view={view} navigate={href => { router.push(href); setMenu(false); }} /></div>;
+  <main><header className="topbar"><button className="menu-btn" onClick={() => setMenu(true)} aria-label="Mở trình đơn">☰</button><div className="crumb">Không gian làm việc <span>/</span> {visibleNav.find(n => n.view === view)?.label}</div><span className="account-name">{user?.username}</span>{user?.role === "admin" && <span className="admin-badge">ADMIN</span>}<span className="user-avatar">{initials || "LH"}</span><button className="logout-btn" onClick={() => void logout()}>Đăng xuất</button></header>
+  <div className="page">{view === "dashboard" && <Dashboard state={state} />}{view === "logs" && <Logs state={state} update={update} />}{view === "plan" && <Plan state={state} update={update} />}{view === "activities" && <Activities state={state} update={update} />}{view === "conclusion" && <ConclusionView state={state} update={update} />}{view === "compliance" && <Compliance state={state} />}{view === "settings" && <Settings state={state} setState={setState} saveState={saveSettings} />}{view === "users" && (user?.role === "admin" ? <AdminUsers preview={isLocalPreviewUser} onOnlineCount={setOnlineCount} /> : <AccessDenied />)}</div><footer className="app-footer"><span>Pay to Pass · Dự án cá nhân · Nhật ký thực tập UEH</span></footer></main><AssistantAgent state={state} view={view} navigate={href => { router.push(href); setMenu(false); }} /></div>;
+}
+
+function AccessDenied() {
+  return <section className="panel admin-denied"><h2>Không có quyền truy cập</h2><p>Mục này chỉ hiển thị với quản trị viên.</p><Link className="primary-btn" href="/">Về Tổng quan</Link></section>;
+}
+
+function AdminUsers({ preview, onOnlineCount }: { preview: boolean; onOnlineCount: (count: number) => void }) {
+  const [users, setUsers] = useState<AdminUser[]>(preview ? [{ id: "local-preview", username: "lehongvan", fullName: "Lê Hồng Vân", role: "admin", createdAt: new Date().toISOString(), online: true, lastSeen: new Date().toISOString() }] : []);
+  const [loading, setLoading] = useState(!preview), [error, setError] = useState("");
+  useEffect(() => {
+    if (preview) { onOnlineCount(1); return; }
+    let active = true;
+    const load = () => void fetch("/api/admin/users", { cache: "no-store" }).then(async response => {
+      const data = await response.json() as { users?: AdminUser[]; onlineCount?: number; error?: string };
+      if (!response.ok || !data.users) throw new Error(data.error || "Không thể tải danh sách người dùng.");
+      if (active) { setUsers(data.users); setLoading(false); setError(""); onOnlineCount(data.onlineCount ?? 0); }
+    }).catch(reason => { if (active) { setLoading(false); setError(reason instanceof Error ? reason.message : "Không thể tải danh sách người dùng."); } });
+    load();
+    const timer = setInterval(load, 30_000);
+    return () => { active = false; clearInterval(timer); };
+  }, [preview, onOnlineCount]);
+  const online = users.filter(item => item.online).length;
+  return <><Title eyebrow="QUẢN TRỊ HỆ THỐNG" title="Người đã đăng ký" desc="Danh sách tài khoản và trạng thái hoạt động gần đây của người dùng." action={<div className="admin-summary"><b>{users.length}</b><span>tài khoản</span><b className="online-number">{online}</b><span>đang online</span></div>} />{error && <div className="notice">{error}</div>}<section className="admin-users panel">{loading ? <p>Đang tải danh sách…</p> : <div className="admin-user-list">{users.map(item => <article key={item.id}><span className={item.online ? "presence-dot online" : "presence-dot"} /><div><b>{item.fullName || item.username}</b><small>@{item.username}</small></div>{item.role === "admin" && <em>ADMIN</em>}<time>{item.online ? "Đang online" : `Đăng ký ${new Date(item.createdAt).toLocaleDateString("vi-VN")}`}</time></article>)}</div>}</section></>;
 }
 
 function Title({ eyebrow, title, desc, action }: { eyebrow?: string; title: string; desc: string; action?: React.ReactNode }) { return <div className="page-title"><div><small>{eyebrow}</small><h1>{title}</h1><p>{desc}</p></div>{action}</div>; }

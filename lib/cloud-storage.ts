@@ -56,6 +56,28 @@ export async function writeEncryptedJson(pathname: string, value: unknown, allow
   });
 }
 
+export async function listEncryptedJson<T>(prefix: string): Promise<Array<{ pathname: string; value: T }>> {
+  ensureBlobToken();
+  const blobs: Array<{ pathname: string; url: string }> = [];
+  let cursor: string | undefined;
+  do {
+    const page = await list({ prefix, limit: 1000, cursor });
+    blobs.push(...page.blobs.map(blob => ({ pathname: blob.pathname, url: blob.url })));
+    cursor = page.hasMore ? page.cursor : undefined;
+  } while (cursor);
+
+  const records = await Promise.all(blobs.map(async blob => {
+    try {
+      const result = await get(blob.url, { access: "public", useCache: false });
+      if (!result || result.statusCode !== 200) return null;
+      return { pathname: blob.pathname, value: decryptJson<T>(await new Response(result.stream).text()) };
+    } catch {
+      return null;
+    }
+  }));
+  return records.filter((record): record is { pathname: string; value: T } => record !== null);
+}
+
 const userStatePath = (userId: string) => `intern-diary/users/${userId}/state-v1.json`;
 
 export async function readCloudState(userId: string): Promise<AppState> {

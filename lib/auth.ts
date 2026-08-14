@@ -1,7 +1,7 @@
 import { createHash, createHmac, randomBytes, randomUUID, scrypt as scryptCallback, timingSafeEqual } from "node:crypto";
 import { promisify } from "node:util";
 import type { NextRequest, NextResponse } from "next/server";
-import { readCloudState, readEncryptedJson, readLegacyCloudState, writeCloudState, writeEncryptedJson } from "./cloud-storage";
+import { listEncryptedJson, readCloudState, readEncryptedJson, readLegacyCloudState, writeCloudState, writeEncryptedJson } from "./cloud-storage";
 
 const scrypt = promisify(scryptCallback);
 export const SESSION_COOKIE = "intern_diary_session_v2";
@@ -12,9 +12,11 @@ export interface PublicUser {
   id: string;
   username: string;
   fullName: string;
+  role: "admin" | "user";
 }
 
-interface StoredUser extends PublicUser {
+interface StoredUser extends Omit<PublicUser, "role"> {
+  role?: "admin" | "user";
   normalizedUsername: string;
   passwordSalt: string;
   passwordHash: string;
@@ -33,6 +35,14 @@ function secret() {
 
 function normalizeUsername(username: string) {
   return username.trim().toLowerCase();
+}
+
+export function roleForUsername(username: string): PublicUser["role"] {
+  return normalizeUsername(username) === "lehongvan" ? "admin" : "user";
+}
+
+function toPublicUser(user: Pick<StoredUser, "id" | "username" | "fullName">): PublicUser {
+  return { id: user.id, username: user.username, fullName: user.fullName, role: roleForUsername(user.username) };
 }
 
 function userPath(username: string) {
@@ -93,6 +103,7 @@ export async function registerUser(username: string, password: string, fullName:
     passwordSalt: salt,
     passwordHash: await hashPassword(password, salt),
     createdAt: new Date().toISOString(),
+    role: roleForUsername(cleanUsername),
   };
   try {
     await writeEncryptedJson(userPath(cleanUsername), user, false);
@@ -100,7 +111,7 @@ export async function registerUser(username: string, password: string, fullName:
     throw new Error("Tên đăng nhập này đã tồn tại.");
   }
   await provisionState(user.id, user.fullName);
-  return { id: user.id, username: user.username, fullName: user.fullName };
+  return toPublicUser(user);
 }
 
 export async function authenticateUser(username: string, password: string): Promise<PublicUser | null> {
@@ -109,7 +120,17 @@ export async function authenticateUser(username: string, password: string): Prom
   const supplied = Buffer.from(await hashPassword(password, user.passwordSalt), "hex");
   const expected = Buffer.from(user.passwordHash, "hex");
   if (supplied.length !== expected.length || !timingSafeEqual(supplied, expected)) return null;
-  return { id: user.id, username: user.username, fullName: user.fullName };
+  return toPublicUser(user);
+}
+
+export interface RegisteredUser extends PublicUser {
+  createdAt: string;
+}
+
+export async function listRegisteredUsers(): Promise<RegisteredUser[]> {
+  const records = await listEncryptedJson<StoredUser>("intern-diary/auth/users/");
+  return records.map(({ value }) => ({ ...toPublicUser(value), createdAt: value.createdAt }))
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 }
 
 export function createSessionToken(user: PublicUser) {
@@ -143,7 +164,7 @@ export function getSession(request: NextRequest): PublicUser | null {
   try {
     const value = JSON.parse(Buffer.from(payload, "base64url").toString("utf8")) as SessionPayload;
     if (!value.id || !value.username || !value.fullName || value.exp <= Math.floor(Date.now() / 1000)) return null;
-    return { id: value.id, username: value.username, fullName: value.fullName };
+    return { id: value.id, username: value.username, fullName: value.fullName, role: roleForUsername(value.username) };
   } catch {
     return null;
   }
