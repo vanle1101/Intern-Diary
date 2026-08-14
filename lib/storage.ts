@@ -24,3 +24,25 @@ export function normalizeState(value: unknown): AppState {
 }
 
 export function resetState(withDemo = false) { return createInitialState(withDemo); }
+
+export function removeUntouchedDemoData(state: AppState): AppState | null {
+  const demoLogs = state.dailyLogs.length === 4 && state.dailyLogs.every(log => log.additionalNotes === "Dữ liệu minh hoạ — có thể xoá trong Cài đặt.");
+  if (!demoLogs) return null;
+  const clean = createInitialState(false);
+  return {
+    ...clean,
+    profile: {
+      ...state.profile,
+      fullName: state.profile.fullName === "Sinh viên UEH" ? "" : state.profile.fullName,
+    },
+    internship: {
+      ...clean.internship,
+      profileId: state.profile.id,
+      organization: state.internship.organization === "Đơn vị thực tập" ? "" : state.internship.organization,
+      position: state.internship.position,
+      supervisor: state.internship.supervisor,
+      startDate: state.internship.startDate === "2026-01-05" ? "" : state.internship.startDate,
+      endDate: state.internship.endDate === "2026-03-27" ? "" : state.internship.endDate,
+    },
+  };
+}

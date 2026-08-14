@@ -2,7 +2,7 @@ import { createCipheriv, createDecipheriv, createHash, randomBytes } from "node:
 import { get, list, put } from "@vercel/blob";
 import type { AppState } from "./models";
 import { createInitialState } from "./seed";
-import { normalizeState } from "./storage";
+import { normalizeState, removeUntouchedDemoData } from "./storage";
 
 const LEGACY_STATE_PATH = "intern-diary/state-v1.json";
 
@@ -60,8 +60,16 @@ const userStatePath = (userId: string) => `intern-diary/users/${userId}/state-v1
 
 export async function readCloudState(userId: string): Promise<AppState> {
   const saved = await readEncryptedJson<Partial<AppState>>(userStatePath(userId));
-  if (saved) return normalizeState(saved);
-  const initial = createInitialState(true);
+  if (saved) {
+    const normalized = normalizeState(saved);
+    const cleaned = removeUntouchedDemoData(normalized);
+    if (cleaned) {
+      await writeCloudState(userId, cleaned);
+      return cleaned;
+    }
+    return normalized;
+  }
+  const initial = createInitialState(false);
   await writeCloudState(userId, initial);
   return initial;
 }

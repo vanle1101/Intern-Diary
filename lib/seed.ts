@@ -9,14 +9,14 @@ const topics = [
   ["Kiểm tra bảng phân bổ chi phí trả trước TK 242", "Đối chiếu và đánh giá thời gian phân bổ"],
 ];
 
-export function createInitialState(withDemo = true): AppState {
+export function createInitialState(withDemo = false): AppState {
   const internshipId = id(), profileId = id();
   const plans: InternshipPlan[] = Array.from({ length: 12 }, (_, index) => ({
     id: id(), internshipId, week: index + 1,
-    workContent: topics[index]?.[0] ?? "", target: topics[index]?.[1] ?? "",
-    method: index < 4 ? "Quan sát, thực hành dưới sự hướng dẫn và tự nghiên cứu" : "",
-    supportRequired: index < 4 ? "Hướng dẫn của kiểm toán viên phụ trách" : "",
-    expectedResult: index < 4 ? "Hoàn thành và lưu giấy làm việc đúng quy trình" : "",
+    workContent: withDemo ? topics[index]?.[0] ?? "" : "", target: withDemo ? topics[index]?.[1] ?? "" : "",
+    method: withDemo && index < 4 ? "Quan sát, thực hành dưới sự hướng dẫn và tự nghiên cứu" : "",
+    supportRequired: withDemo && index < 4 ? "Hướng dẫn của kiểm toán viên phụ trách" : "",
+    expectedResult: withDemo && index < 4 ? "Hoàn thành và lưu giấy làm việc đúng quy trình" : "",
   }));
   const logs: DailyLog[] = withDemo ? topics.map((topic, index) => ({
     id: id(), internshipId, date: `2026-01-${String(5 + index * 7).padStart(2, "0")}`, week: index + 1,
@@ -33,8 +33,8 @@ export function createInitialState(withDemo = true): AppState {
   })) : [];
   return {
     version: 1,
-    profile: { id: profileId, fullName: "Sinh viên UEH", studentId: "", university: "Đại học Kinh tế TP.HCM", faculty: "Khoa Kế toán", major: "Kiểm toán", className: "" },
-    internship: { id: internshipId, profileId, organization: "Đơn vị thực tập", position: "Thực tập sinh kiểm toán", supervisor: "", startDate: "2026-01-05", endDate: "2026-03-27", totalWeeks: 12, type: "graduation_internship" },
+    profile: { id: profileId, fullName: withDemo ? "Sinh viên UEH" : "", studentId: "", university: "Đại học Kinh tế TP.HCM", faculty: "Khoa Kế toán", major: "Kiểm toán", className: "" },
+    internship: { id: internshipId, profileId, organization: withDemo ? "Đơn vị thực tập" : "", position: "Thực tập sinh kiểm toán", supervisor: "", startDate: withDemo ? "2026-01-05" : "", endDate: withDemo ? "2026-03-27" : "", totalWeeks: 12, type: "graduation_internship" },
     plans, dailyLogs: logs, activities: [], weeklySummaries: [],
     conclusion: {
       id: id(), internshipId,
