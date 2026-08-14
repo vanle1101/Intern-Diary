@@ -1,0 +1,29 @@
+body {
+  font-family: var(--font-vietnamese-sans), "Segoe UI", sans-serif;
+}
+
+.brand-mark,
+.brand b,
+.page-title h1,
+.ring span,
+.hero h2,
+.week-card strong,
+.stat strong,
+.panel-head h3,
+.panel > h3,
+.date b,
+.log-body h3,
+.activity-card h3,
+.modal-head h2,
+.picker h3,
+.activity-card > span,
+.section-title,
+.editor b,
+.coming h2,
+.access-card h1 {
+  font-family: var(--font-vietnamese-serif), Georgia, serif;
+}
+
+.week-card strong em {
+  font-family: var(--font-vietnamese-sans), "Segoe UI", sans-serif;
+}
