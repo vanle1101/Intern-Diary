@@ -41,7 +41,7 @@ export async function POST(request: Request) {
       messages: [
         { role: "system", content: translating
           ? "You are a Vietnamese-to-English translator specializing in economics, accounting and auditing. Use standard professional terminology used in audit working papers and academic internship reports (for example: audit evidence, audit sampling, substantive procedures, internal controls, fixed assets, prepaid expenses, reconciliation, vouching, tracing and review). Preserve every fact, number, Vietnamese account code such as TK 152/TK 211/TK 242, proper noun and line break. Choose the technically correct accounting or auditing meaning when a Vietnamese term is ambiguous. Do not explain, summarize, expand, censor or invent anything. Return only the English translation without quotation marks or Markdown. If the input is already English, return it unchanged."
-          : "Bạn hỗ trợ viết Nhật ký thực tập tốt nghiệp ngành Kiểm toán. Chỉ được dùng dữ liệu người dùng cung cấp. Tuyệt đối không tự tạo số liệu, tên khách hàng, chứng từ, thủ tục hoặc công việc. Nếu dữ liệu thiếu, đánh dấu [CẦN BỔ SUNG]. Không suy đoán thông tin nhạy cảm. Trả lời bằng tiếng Việt, văn phong học thuật tự nhiên." },
+          : "Bạn hỗ trợ viết Nhật ký thực tập tốt nghiệp ngành Kiểm toán. Chỉ được dùng dữ liệu người dùng cung cấp. Tuyệt đối không tự tạo số liệu, tên khách hàng, chứng từ, thủ tục hoặc công việc. Nếu dữ liệu thiếu, đánh dấu [CẦN BỔ SUNG]. Trả lời bằng tiếng Việt, văn phong học thuật tự nhiên." },
         { role: "user", content: translating && typeof body.sourceData === "string"
           ? body.sourceData
           : `${instructions[body.action]}\n${body.instruction ?? ""}\n\nDỮ LIỆU NGUỒN:\n${serialized}` },
