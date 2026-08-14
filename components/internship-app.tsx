@@ -18,6 +18,8 @@ const uid = () => crypto.randomUUID(), iso = () => new Date().toISOString(), tod
 type SaveStatus = "loading" | "locked" | "saving" | "saved" | "error";
 type AuthMode = "login" | "register";
 type CurrentUser = { id: string; username: string; fullName: string };
+let memoryState: AppState | null = null;
+let memoryUser: CurrentUser | null = null;
 
 async function requestCloudState() {
   const response = await fetch("/api/state", { cache: "no-store" });
@@ -49,8 +51,8 @@ async function translateToEnglish(sourceData: string) {
 }
 
 export default function InternshipApp({ view }: { view: View }) {
-  const [state, setState] = useState<AppState | null>(null), [status, setStatus] = useState<SaveStatus>("loading"), [menu, setMenu] = useState(false), [message, setMessage] = useState("");
-  const [authMode, setAuthMode] = useState<AuthMode>("login"), [fullName, setFullName] = useState(""), [username, setUsername] = useState(""), [password, setPassword] = useState(""), [user, setUser] = useState<CurrentUser | null>(null), [authWorking, setAuthWorking] = useState(false);
+  const [state, setState] = useState<AppState | null>(() => memoryState), [status, setStatus] = useState<SaveStatus>(() => memoryState && memoryUser ? "saved" : "loading"), [menu, setMenu] = useState(false), [message, setMessage] = useState("");
+  const [authMode, setAuthMode] = useState<AuthMode>("login"), [fullName, setFullName] = useState(""), [username, setUsername] = useState(""), [password, setPassword] = useState(""), [user, setUser] = useState<CurrentUser | null>(() => memoryUser), [authWorking, setAuthWorking] = useState(false);
   const skipInitialSave = useRef(true);
   const openJournal = async (currentUser: CurrentUser, showLoading = true) => {
     if (showLoading) setStatus("loading");
@@ -58,6 +60,8 @@ export default function InternshipApp({ view }: { view: View }) {
     try {
       const cloudState = await requestCloudState();
       skipInitialSave.current = true;
+      memoryState = cloudState;
+      memoryUser = currentUser;
       setUser(currentUser);
       setState(cloudState);
       setStatus("saved");
@@ -66,6 +70,7 @@ export default function InternshipApp({ view }: { view: View }) {
     }
   };
   useEffect(() => {
+    if (memoryState && memoryUser) return;
     queueMicrotask(() => {
       void fetch("/api/auth/me", { cache: "no-store" }).then(async response => {
         const data = await response.json() as { user?: CurrentUser };
@@ -74,6 +79,11 @@ export default function InternshipApp({ view }: { view: View }) {
       }).catch(() => setStatus("locked"));
     });
   }, []);
+  useEffect(() => {
+    if (!state || !user) return;
+    memoryState = state;
+    memoryUser = user;
+  }, [state, user]);
   useEffect(() => {
     if (!state || !user) return;
     if (skipInitialSave.current) { skipInitialSave.current = false; return; }
@@ -101,10 +111,11 @@ export default function InternshipApp({ view }: { view: View }) {
   };
   const logout = async () => {
     await fetch("/api/auth/logout", { method: "POST" }).catch(() => undefined);
+    memoryState = null; memoryUser = null;
     setState(null); setUser(null); setPassword(""); setMessage(""); setStatus("locked"); setMenu(false);
   };
   if (status === "locked") return <div className="access-page"><section className="access-intro"><div className="access-brand"><span className="brand-mark">N</span><span><b>Nhật ký thực tập</b><small>UEH · KIỂM TOÁN 2026</small></span></div><div className="access-copy"><small>KHÔNG GIAN LÀM VIỆC CÁ NHÂN</small><h2>Ghi lại hành trình<br />thực tập của bạn.</h2><p>Lập kế hoạch, cập nhật công việc hằng ngày và hoàn thiện báo cáo thực tập trong một không gian thống nhất.</p><div className="access-features"><span><i>01</i> Nhật ký theo ngày</span><span><i>02</i> Kế hoạch 12 tuần</span><span><i>03</i> Dịch VI → EN chuyên ngành</span></div></div><small className="access-foot">Tự động lưu trên Vercel</small></section><form className="access-card" aria-busy={authWorking} onSubmit={e => { e.preventDefault(); void submitAuth(); }}><span className="brand-mark">N</span><small>NHẬT KÝ THỰC TẬP UEH</small><div className="auth-tabs"><button type="button" disabled={authWorking} className={authMode === "login" ? "active" : ""} onClick={() => { setAuthMode("login"); setMessage(""); }}>Đăng nhập</button><button type="button" disabled={authWorking} className={authMode === "register" ? "active" : ""} onClick={() => { setAuthMode("register"); setMessage(""); }}>Đăng ký</button></div><h1>{authMode === "login" ? "Chào mừng bạn quay lại" : "Tạo tài khoản mới"}</h1><p>{authMode === "login" ? "Đăng nhập để mở nhật ký đã lưu trên Vercel." : "Mỗi tài khoản có một không gian nhật ký riêng."}</p>{authMode === "register" && <label><span>Họ và tên</span><input disabled={authWorking} autoComplete="name" value={fullName} onChange={e => setFullName(e.target.value)} minLength={2} maxLength={80} required /></label>}<label><span>Tên đăng nhập</span><input disabled={authWorking} autoComplete="username" value={username} onChange={e => setUsername(e.target.value)} minLength={3} maxLength={32} pattern="[A-Za-z0-9._-]+" required /></label><label><span>Mật khẩu</span><input disabled={authWorking} type="password" autoComplete={authMode === "login" ? "current-password" : "new-password"} value={password} onChange={e => setPassword(e.target.value)} minLength={6} maxLength={128} required /></label>{message && <div className="access-error">{message}</div>}<button className={`primary-btn auth-submit${authWorking ? " busy" : ""}`} disabled={authWorking}>{authWorking ? authMode === "login" ? "Đang đăng nhập…" : "Đang tạo tài khoản…" : authMode === "login" ? "Đăng nhập" : "Tạo tài khoản"}</button></form></div>;
-  if (!state) return <div className="loading">Đang tải dữ liệu từ Vercel…</div>;
+  if (!state) return null;
   const update = (fn: (s: AppState) => AppState) => setState(previous => previous ? fn(previous) : previous);
   return <div className="app-shell"><aside className={menu ? "sidebar open" : "sidebar"}>
     <Link className="brand" href="/"><span className="brand-mark">N</span><span><b>Nhật ký thực tập</b><small>UEH · KIỂM TOÁN 2026</small></span></Link>
