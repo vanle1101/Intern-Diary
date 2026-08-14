@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ state: await readCloudState(user.id) }, { headers });
   } catch (error) {
     console.error("Cloud state read failed", error);
-    return NextResponse.json({ error: "Không thể đọc dữ liệu trên Vercel." }, { status: 503, headers });
+    return NextResponse.json({ error: "Không thể đọc dữ liệu." }, { status: 503, headers });
   }
 }
 
@@ -35,6 +35,6 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json({ savedAt: new Date().toISOString() }, { headers });
   } catch (error) {
     console.error("Cloud state write failed", error);
-    return NextResponse.json({ error: "Không thể lưu dữ liệu trên Vercel." }, { status: 503, headers });
+    return NextResponse.json({ error: "Không thể lưu dữ liệu." }, { status: 503, headers });
   }
 }
