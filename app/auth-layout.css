@@ -17,20 +17,21 @@
   position: relative;
   overflow: hidden;
   background:
-    radial-gradient(circle at 19% 11%, #ffffff 0 9%, transparent 23%),
-    linear-gradient(180deg, #dff2ff 0%, #f7fbff 48%, #eef7f2 100%);
+    linear-gradient(90deg, #fffffff8 0%, #fffffff2 34%, #ffffffe0 52%, #ffffff70 72%, #ffffff12 100%),
+    linear-gradient(180deg, #dff3ffb8 0%, #ffffff40 46%, #006d7088 78%, #00675edb 100%),
+    url("/ueh-campus-hero.png") center bottom / cover no-repeat;
 }
 
 .access-intro::before {
   content: "";
   position: absolute;
-  inset: auto 0 0;
-  height: 37%;
-  background:
-    linear-gradient(180deg, transparent 0 8%, #ffffffb5 8% 10%, transparent 10%),
-    linear-gradient(90deg, #8ac7dc 0 11%, #c7d8df 11% 18%, #87b8cc 18% 27%, #d6e2e5 27% 34%, #9ac9d8 34% 42%, transparent 42%),
-    linear-gradient(180deg, transparent 0 38%, #dfe7e7 38% 100%);
-  opacity: .9;
+  top: 52px;
+  right: 56px;
+  width: 230px;
+  height: 230px;
+  background-image: radial-gradient(#ffffff 1.2px, transparent 1.8px);
+  background-size: 15px 15px;
+  opacity: .5;
 }
 
 .access-intro::after {
@@ -39,11 +40,11 @@
   left: 0;
   right: 0;
   bottom: 0;
-  height: 28%;
+  height: 32%;
   background:
-    radial-gradient(ellipse at 50% 85%, #0b6b5a 0 16%, transparent 17%),
-    linear-gradient(180deg, transparent, #047064d9 78%);
-  opacity: .86;
+    radial-gradient(ellipse at 47% 87%, #0a5c50 0 14%, transparent 15%),
+    linear-gradient(180deg, transparent 0%, #006d70a6 42%, #00675ee8 100%);
+  opacity: .92;
 }
 
 .ueh-wordmark {
@@ -158,27 +159,8 @@
 }
 
 .campus-scene {
-  position: absolute;
-  right: 4%;
-  bottom: 10%;
-  z-index: 1;
-  width: min(34vw, 390px);
-  height: min(28vw, 360px);
-  opacity: .75;
+  display: none;
 }
-.campus-scene span {
-  position: absolute;
-  bottom: 0;
-  width: 32%;
-  border: 1px solid #8da8b4;
-  background:
-    repeating-linear-gradient(90deg, transparent 0 15px, #ffffff86 15px 17px),
-    linear-gradient(180deg, #b7c9ce, #eff5f4);
-  box-shadow: 0 16px 34px #23485c2b;
-}
-.campus-scene span:nth-child(1) { left: 3%; height: 44%; }
-.campus-scene span:nth-child(2) { left: 32%; height: 68%; }
-.campus-scene span:nth-child(3) { right: 5%; height: 86%; }
 
 .access-motto {
   position: relative;
