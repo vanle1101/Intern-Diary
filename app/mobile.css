@@ -84,6 +84,10 @@
   font-weight: 800;
 }
 
+.plan-table tbody th span {
+  display: none;
+}
+
 @media (max-width: 760px) {
   :root {
     --mobile-nav-height: 72px;
@@ -722,5 +726,183 @@
 @media (max-width: 390px) {
   .mobile-bottom-nav a {
     font-size: 8px;
+  }
+}
+
+@media (max-width: 760px) {
+  .activity-layout {
+    width: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 12px !important;
+  }
+
+  .picker,
+  .activity-list {
+    position: static !important;
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .picker {
+    padding: 15px !important;
+    border-radius: 15px !important;
+  }
+
+  .picker h3 {
+    font-family: var(--font-sans) !important;
+    font-size: 16px !important;
+    font-weight: 800 !important;
+  }
+
+  .picker > p {
+    margin: 4px 0 10px !important;
+    font-size: 11px !important;
+  }
+
+  .picker label {
+    padding: 10px 0 !important;
+  }
+
+  .picker label b {
+    font-size: 13px !important;
+  }
+
+  .picker label small {
+    font-size: 10px !important;
+  }
+
+  .activity-card {
+    width: 100% !important;
+    min-width: 0 !important;
+    padding: 15px !important;
+    grid-template-columns: 38px minmax(0, 1fr) !important;
+    gap: 11px !important;
+  }
+
+  .activity-card > span {
+    width: 38px !important;
+    height: 38px !important;
+    font-size: 14px !important;
+  }
+
+  .activity-card h3 {
+    overflow-wrap: anywhere;
+    font-family: var(--font-sans) !important;
+    font-size: 16px !important;
+  }
+
+  .activity-card p {
+    overflow-wrap: anywhere;
+    font-size: 12px !important;
+  }
+
+  .activity-card .card-actions {
+    grid-column: 2 !important;
+    flex-wrap: wrap;
+  }
+
+  .activity-list .empty {
+    width: 100% !important;
+    min-height: 150px !important;
+    padding: 24px 18px;
+    text-align: center;
+  }
+
+  .plan-table {
+    margin: 0 !important;
+    overflow: visible !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+  }
+
+  .plan-table table,
+  .plan-table tbody {
+    width: 100% !important;
+    min-width: 0 !important;
+    display: block !important;
+  }
+
+  .plan-table thead {
+    display: none !important;
+  }
+
+  .plan-table tbody {
+    display: grid !important;
+    gap: 12px;
+  }
+
+  .plan-table tr {
+    width: 100% !important;
+    display: block !important;
+    overflow: hidden;
+    border: 1px solid #dfe8e4;
+    border-radius: 16px;
+    background: #fff;
+    box-shadow: 0 5px 18px #204b3c0b;
+  }
+
+  .plan-table tbody th {
+    width: 100% !important;
+    padding: 13px 14px !important;
+    display: flex !important;
+    align-items: center;
+    justify-content: space-between;
+    border: 0 !important;
+    border-bottom: 1px solid #e5ece9 !important;
+    background: #edf7f3 !important;
+    color: #08745b !important;
+    font-family: var(--font-sans) !important;
+    font-size: 15px !important;
+  }
+
+  .plan-table tbody th span {
+    display: inline !important;
+    color: #526b63;
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  .plan-table td {
+    width: 100% !important;
+    padding: 12px 14px !important;
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px 10px;
+    border: 0 !important;
+    border-bottom: 1px solid #edf1ef !important;
+  }
+
+  .plan-table td:last-child {
+    border-bottom: 0 !important;
+  }
+
+  .plan-table td::before {
+    content: attr(data-label);
+    align-self: center;
+    color: #344a43;
+    font-size: 12px;
+    font-weight: 800;
+  }
+
+  .plan-table .translate-btn {
+    min-height: 34px !important;
+    padding: 0 10px !important;
+    font-size: 10px !important;
+  }
+
+  .plan-table textarea {
+    grid-column: 1 / -1;
+    width: 100% !important;
+    min-width: 0 !important;
+    min-height: 92px !important;
+    padding: 10px 11px !important;
+    border: 1px solid #dfe7e4 !important;
+    border-radius: 10px;
+    background: #fbfdfc;
+    font-size: 14px !important;
+    line-height: 1.45 !important;
   }
 }
