@@ -622,25 +622,23 @@
   .access-page .access-card {
     min-height: 100dvh !important;
     height: 100dvh !important;
-    padding: 0 !important;
-    display: flex !important;
-    align-items: flex-end !important;
-    justify-content: flex-end !important;
+    padding: max(14px, env(safe-area-inset-top)) 14px max(14px, env(safe-area-inset-bottom)) !important;
+    display: grid !important;
+    place-items: center !important;
     background: transparent !important;
   }
 
   .access-form {
-    width: 100% !important;
-    max-width: none !important;
-    max-height: calc(78dvh + env(safe-area-inset-bottom)) !important;
-    padding: 21px 20px calc(18px + env(safe-area-inset-bottom)) !important;
-    border: 1px solid #ffffff !important;
-    border-bottom: 0 !important;
-    border-radius: 26px 26px 0 0 !important;
-    background: #fffffff7 !important;
-    box-shadow: 0 -16px 50px #0c3b3030 !important;
-    backdrop-filter: blur(12px) saturate(1.05) !important;
-    -webkit-backdrop-filter: blur(12px) saturate(1.05) !important;
+    width: min(100%, 362px) !important;
+    max-width: 362px !important;
+    max-height: calc(100dvh - max(28px, env(safe-area-inset-top) + env(safe-area-inset-bottom))) !important;
+    padding: 18px 17px 14px !important;
+    border: 1px solid #ffffffb8 !important;
+    border-radius: 20px !important;
+    background: #fffffff0 !important;
+    box-shadow: 0 20px 58px #0c3b3040 !important;
+    backdrop-filter: blur(14px) saturate(1.05) !important;
+    -webkit-backdrop-filter: blur(14px) saturate(1.05) !important;
     animation: mobileAuthSheetIn .32s cubic-bezier(.22,.8,.28,1) both;
   }
 
@@ -651,41 +649,41 @@
 
   .auth-rule {
     width: 34px !important;
-    margin: 8px 0 14px !important;
+    margin: 7px 0 12px !important;
   }
 
   .access-page .access-card h1 {
-    margin-bottom: 5px !important;
-    font-size: 22px !important;
+    margin-bottom: 4px !important;
+    font-size: 20px !important;
     line-height: 1.2 !important;
   }
 
   .access-page .access-card p {
-    margin-bottom: 15px !important;
-    font-size: 12px !important;
+    margin-bottom: 13px !important;
+    font-size: 11px !important;
     line-height: 1.45 !important;
   }
 
   .access-page .access-card label {
-    gap: 6px !important;
+    gap: 5px !important;
     font-size: 11px !important;
   }
 
   .access-card label + label {
-    margin-top: 11px !important;
+    margin-top: 9px !important;
   }
 
   .auth-input {
-    min-height: 46px !important;
-    border-radius: 12px !important;
+    min-height: 44px !important;
+    border-radius: 11px !important;
   }
 
   .access-page .access-card input:not([type="checkbox"]) {
-    font-size: 14px !important;
+    font-size: 13px !important;
   }
 
   .auth-row {
-    margin-top: 12px !important;
+    margin-top: 10px !important;
   }
 
   .access-page .access-card .remember {
@@ -693,16 +691,16 @@
   }
 
   .access-page .access-card .auth-submit {
-    min-height: 48px !important;
-    margin-top: 16px !important;
-    border-radius: 12px !important;
-    font-size: 14px !important;
+    min-height: 44px !important;
+    margin-top: 13px !important;
+    border-radius: 11px !important;
+    font-size: 13px !important;
   }
 
   .auth-mini-switch {
-    min-height: 38px;
-    margin-top: 7px !important;
-    font-size: 12px !important;
+    min-height: 34px;
+    margin-top: 5px !important;
+    font-size: 11px !important;
   }
 
   .access-card footer {
