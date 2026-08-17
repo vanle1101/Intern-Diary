@@ -7,6 +7,7 @@ import { createPortal } from "react-dom";
 import type { Activity, AppState, Conclusion, DailyLog, InternshipPlan } from "../lib/models";
 import { getComplianceItems, getProgress } from "../lib/progress";
 import { resetState } from "../lib/storage";
+import { LottieSparkle } from "./lottie-sparkle";
 
 export type View = "dashboard" | "logs" | "plan" | "activities" | "conclusion" | "compliance" | "settings" | "users";
 const nav: { view: View; href: string; label: string; icon: string; adminOnly?: boolean }[] = [
@@ -321,7 +322,7 @@ function AssistantAgent({ state, view, navigate }: { state: AppState; view: View
       setWorking(false); setOpen(true);
     }
   };
-  const widget = <div className={open ? "agent-widget open" : "agent-widget"}><button className="agent-fab" onClick={() => setOpen(value => !value)} aria-label="Mở trợ lý AI"><span>✦</span><em><b>Trợ lý AI</b><small>Mở tab & hỗ trợ nhập</small></em></button>{open && <section className="agent-panel" aria-label="Trợ lý AI"><header><div><small>TRỢ LÝ AGENT</small><b>Muốn làm gì, nói mình mở đúng tab</b></div><button onClick={() => setOpen(false)} aria-label="Đóng">×</button></header><div className="agent-messages">{messages.map((message, index) => <p key={index} className={message.role}>{message.text}</p>)}{working && <p className="agent">Đang nghĩ chút…</p>}</div><div className="agent-suggest"><button onClick={() => void send("Tôi muốn nhập nhật ký")}>Nhập nhật ký</button><button onClick={() => void send("Kiểm tra tôi còn thiếu gì")}>Kiểm tra thiếu gì</button><button onClick={() => void send("Setup ngày bắt đầu")}>Setup lịch</button></div><form onSubmit={event => { event.preventDefault(); void send(); }}><input value={input} onChange={event => setInput(event.target.value)} placeholder="Ví dụ: t muốn nhập nhật ký hôm nay" /><button disabled={working}>Gửi</button></form></section>}</div>;
+  const widget = <div className={open ? "agent-widget open" : "agent-widget"}><button className="agent-fab" onClick={() => setOpen(value => !value)} aria-label="Mở trợ lý AI"><span><LottieSparkle /></span><em><b>Trợ lý AI</b><small>Mở tab & hỗ trợ nhập</small></em></button>{open && <section className="agent-panel" aria-label="Trợ lý AI"><header><div><small>TRỢ LÝ AGENT</small><b>Muốn làm gì, nói mình mở đúng tab</b></div><button onClick={() => setOpen(false)} aria-label="Đóng">×</button></header><div className="agent-messages">{messages.map((message, index) => <p key={index} className={message.role}>{message.text}</p>)}{working && <p className="agent">Đang nghĩ chút…</p>}</div><div className="agent-suggest"><button onClick={() => void send("Tôi muốn nhập nhật ký")}>Nhập nhật ký</button><button onClick={() => void send("Kiểm tra tôi còn thiếu gì")}>Kiểm tra thiếu gì</button><button onClick={() => void send("Setup ngày bắt đầu")}>Setup lịch</button></div><form onSubmit={event => { event.preventDefault(); void send(); }}><input value={input} onChange={event => setInput(event.target.value)} placeholder="Ví dụ: t muốn nhập nhật ký hôm nay" /><button disabled={working}>Gửi</button></form></section>}</div>;
   return mounted ? createPortal(widget, document.body) : null;
 }
 

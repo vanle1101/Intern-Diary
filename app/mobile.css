@@ -600,9 +600,10 @@
 
   .agent-panel {
     position: fixed !important;
+    left: 10px !important;
     right: 10px !important;
     bottom: calc(var(--mobile-nav-height) + env(safe-area-inset-bottom) + 68px) !important;
-    width: calc(100vw - 20px) !important;
+    width: auto !important;
     max-height: calc(100dvh - var(--mobile-nav-height) - env(safe-area-inset-bottom) - 86px) !important;
   }
 
